@@ -1,0 +1,1077 @@
+<title>双面扎针测试机演示</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: HMI shell — header band on top, 3D stage with takt strip on the left, operator panel on the right; stacks to one column on phones */
+:root{
+  --bg:#e8ebee; --surface:#f9faf9; --surface-2:#eef1f3; --ink:#141b22; --ink-2:#4a555f; --muted:#86919b;
+  --line:#d4dadf; --accent:#2a78d6; --accent-ink:#1c5cab; --accent-wash:rgba(42,120,214,.10);
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b; --good-ink:#006300;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --seq-250:#86b6ef; --seq-350:#5598e7; --seq-450:#2a78d6; --seq-550:#1c5cab; --seq-650:#104281;
+  --grid:#e1e0d9; --axis:#c3c2b7;
+  --scene-bg:#dde3e8; --scene-floor:#cdd4da; --scene-grid:#b3bcc4;
+  --font-ui:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1215; --surface:#161b20; --surface-2:#1e252b; --ink:#eef1f3; --ink-2:#b7c0c8; --muted:#8a949d;
+    --line:#2a3239; --accent:#3987e5; --accent-ink:#86b6ef; --accent-wash:rgba(57,135,229,.16);
+    --good-ink:#0ca30c;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    --grid:#2c2c2a; --axis:#383835;
+    --scene-bg:#12181d; --scene-floor:#1a2127; --scene-grid:#2b343c;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1215; --surface:#161b20; --surface-2:#1e252b; --ink:#eef1f3; --ink-2:#b7c0c8; --muted:#8a949d;
+  --line:#2a3239; --accent:#3987e5; --accent-ink:#86b6ef; --accent-wash:rgba(57,135,229,.16);
+  --good-ink:#0ca30c;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --grid:#2c2c2a; --axis:#383835;
+  --scene-bg:#12181d; --scene-floor:#1a2127; --scene-grid:#2b343c;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer;line-height:1.3}
+button:hover{background:var(--surface-2)}
+button:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+button.danger{border-color:var(--crit);color:var(--crit)}
+button:disabled{opacity:.45;cursor:default}
+select{font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:5px 8px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.app{height:100%;display:flex;flex-direction:column}
+
+/* header */
+.top{display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap;padding-block:10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{min-width:0;margin-right:auto}
+.brand .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brand h1{margin:0;font-size:18px;font-weight:700;line-height:1.25;text-wrap:balance}
+.ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctl label{font-size:12px;color:var(--ink-2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:5px 10px}
+.seg button+button{border-left:1px solid var(--line)}
+.tower{display:inline-flex;align-items:center;gap:8px;padding:4px 10px 4px 6px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:12px}
+.tower .lamp{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.tower.run .lamp{background:var(--good);box-shadow:0 0 0 3px rgba(12,163,12,.2)}
+.tower.wait .lamp{background:var(--warn);box-shadow:0 0 0 3px rgba(250,178,25,.25)}
+.tower.alarm .lamp{background:var(--crit);box-shadow:0 0 0 3px rgba(208,59,59,.25);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){.tower.alarm .lamp{animation:none}}
+.clock{font-size:12px;color:var(--ink-2)}
+
+/* main */
+.main{flex:1;min-height:0;display:flex;gap:12px;padding-block:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.stage{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.viewport{position:relative;flex:1;min-height:320px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--scene-bg)}
+.viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+.views{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 20px)}
+.views button,.hud button{background:var(--surface);font-size:12px;padding:4px 9px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.views button.on{background:var(--accent);color:#fff}
+.hud{position:absolute;right:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.phasebox{position:absolute;left:10px;bottom:10px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 10px;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,.08);max-width:calc(100% - 20px)}
+.phasebox b{font-weight:500;color:var(--accent-ink)}
+.labels{position:absolute;inset:0;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-100%);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:3px;padding:2px 7px;font-size:11px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-9px;width:1px;height:9px;background:var(--accent)}
+.ptip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:3px 8px;border-radius:3px;transform:translate(-50%,-130%);white-space:nowrap;opacity:.95}
+.partinfo{display:flex;gap:12px;align-items:baseline;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;min-height:40px}
+.partinfo b{font-weight:500;flex:none}
+.partinfo span{color:var(--ink-2)}
+.hint{color:var(--muted);font-size:12px}
+
+/* takt strip */
+.takt{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 12px;display:grid;gap:8px}
+.takt .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.takt .ttl{font-size:12px;color:var(--ink-2);min-width:0}
+.takt .ttl b{color:var(--ink);font-weight:500}
+.bar{position:relative;height:22px;display:flex;gap:2px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
+.bar .sg{position:relative;height:100%;min-width:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;overflow:hidden;white-space:nowrap}
+.bar .sg.dim{opacity:.35}
+.bar .sg .t{padding:0 4px;overflow:hidden;text-overflow:ellipsis}
+.bar .ph{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);box-shadow:0 0 0 1px var(--surface)}
+.micro .sg{font-size:10px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+
+/* panel */
+.panel{width:410px;flex:none;display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{flex:1;border:0;border-radius:0;padding:10px 6px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--accent-ink);border-bottom-color:var(--accent);background:none}
+.pbody{flex:1;min-height:0;overflow:auto;padding:12px;display:grid;gap:14px;align-content:start}
+.sec h3{margin:0 0 8px;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2)}
+.kpi .l{font-size:11px;color:var(--ink-2)}
+.kpi .v{font-size:20px;font-weight:600;line-height:1.2}
+.kpi .u{font-size:11px;color:var(--muted);margin-left:2px;font-weight:400}
+.hero{grid-column:1 / -1;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.hero .v{font-size:48px;font-weight:600;line-height:1}
+.hero .sub{font-size:12px;color:var(--ink-2);padding-bottom:6px}
+.progress{height:8px;border-radius:4px;background:var(--seq-250);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0}
+svg{display:block;max-width:100%}
+.map .cell{stroke:none}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;flex:none}
+.chip.pass i{background:var(--good)} .chip.fail i{background:var(--crit)} .chip.warn i{background:var(--warn)} .chip.pend i{background:var(--muted)} .chip.test i{background:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:500;color:var(--ink-2);position:sticky;top:0;background:var(--surface)}
+td.num,th.num{text-align:right}
+.tbl{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:4px}
+.log{font-size:12px;display:grid;gap:3px;max-height:220px;overflow:auto}
+.log div{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:2px 0;border-bottom:1px solid var(--line)}
+.log .t{color:var(--muted)}
+.log .w{color:var(--serious)} .log .e{color:var(--crit)} .log .ok{color:var(--good-ink)}
+.mitem{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.mitem .n{font-weight:500}
+.mitem .d{font-size:12px;color:var(--ink-2)}
+.meter{grid-column:1 / -1;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:var(--accent)}
+.meter.warn i{background:var(--warn)} .meter.crit i{background:var(--crit)}
+.mitem .due{color:var(--crit);font-weight:500}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.flow{display:grid;gap:6px}
+.flowrow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2)}
+.flowrow.on{border-color:var(--accent);background:var(--accent-wash)}
+.flowrow .n{font-weight:500;font-size:13px}
+.flowrow .d{font-size:12px;color:var(--ink-2)}
+.flowrow .c{font-size:18px;font-weight:600}
+.arrow{text-align:center;color:var(--muted);font-size:12px;line-height:1}
+.note{font-size:12px;color:var(--ink-2);padding:8px 10px;border-left:3px solid var(--accent);background:var(--accent-wash);border-radius:0 4px 4px 0}
+.checks{display:grid;gap:4px;font-size:13px}
+.checks label{display:flex;gap:8px;align-items:center}
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:4px 8px;border-radius:3px;white-space:nowrap;display:none}
+.tip .m{font-family:var(--font-mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:980px){
+  .app{height:auto;min-height:100%}
+  .main{flex-direction:column}
+  .viewport{flex:none;aspect-ratio:4/3;min-height:0;max-width:100%}
+  .panel{width:auto}
+  .pbody{overflow:visible}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .hero .v{font-size:40px}
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">ECP 嵌埋芯片基板 · 30×24 双 MOSFET 条带 · 测试源 Advantest EVA100</div>
+      <h1>双面同时扎针测试机 · 现场演示</h1>
+    </div>
+    <div class="ctl">
+      <label for="cfg">EVA100 配置</label>
+      <select id="cfg">
+        <option value="512" selected>512ch（4AAAA×2）— 每次 2 列</option>
+        <option value="256">256ch — 每次 1 列</option>
+        <option value="128">128ch（现有 4AA00）— 每次半列</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <button id="btnRun" class="primary">▶ 开始</button>
+      <button id="btnReset">↺ 复位</button>
+      <div class="seg" id="speed" role="group" aria-label="演示速度">
+        <button data-s="1" class="on">×1</button><button data-s="2">×2</button><button data-s="5">×5</button><button data-s="20">×20</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="tower wait" id="tower"><i class="lamp"></i><span id="towerTxt">待机</span></span>
+      <span class="clock mono" id="clock">演示时间 00:00:00</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="stage">
+      <div class="viewport" id="viewport">
+        <canvas id="c3d" aria-label="测试机三维模型"></canvas>
+        <div class="views" id="views">
+          <button data-v="overview" class="on">总览</button>
+          <button data-v="station">测试工位</button>
+          <button data-v="top">上针头</button>
+          <button data-v="bottom">下针头</button>
+          <button data-v="section">剖视·分层</button>
+          <button data-v="material">物料视角</button>
+        </div>
+        <div class="hud">
+          <button id="btnExplode">分层展开</button>
+        </div>
+        <div class="labels" id="labels"></div>
+        <div class="ptip" id="ptip" hidden></div>
+        <div class="phasebox" id="phasebox">工序 <b>待机</b></div>
+      </div>
+      <div class="partinfo" id="partinfo"><b>部件说明</b><span>把鼠标移到 3D 部件上查看功能；点击可固定。拖动旋转，滚轮缩放，右键平移。</span></div>
+      <div class="takt" id="takt">
+        <div class="row">
+          <div class="ttl">单条节拍 <b id="taktTotal" class="mono">—</b> · 理论 <b id="taktUph" class="mono">—</b> 条/h · 扎针 <b id="taktN" class="mono">—</b> 次 × 1.2 s</div>
+          <div class="legend" id="taktLegend"></div>
+        </div>
+        <div class="bar" id="macroBar"></div>
+        <div class="row"><div class="ttl">单次扎针 1.2 s 分解</div></div>
+        <div class="bar micro" id="microBar"></div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="tabs" role="tablist">
+        <button class="on" data-t="run" role="tab">运行</button>
+        <button data-t="mat" role="tab">物料</button>
+        <button data-t="test" role="tab">测试</button>
+        <button data-t="maint" role="tab">维护</button>
+      </div>
+
+      <div class="pbody" id="tab-run">
+        <div class="sec">
+          <div class="kpis">
+            <div class="kpi hero"><div><div class="l">实时产能（近 5 条）</div><div class="v mono" id="kUph">—</div></div><div class="sub">条/小时 · 理论 <span class="mono" id="kUphT">—</span></div></div>
+            <div class="kpi"><div class="l">已测条带</div><div class="v mono" id="kStrips">0</div></div>
+            <div class="kpi"><div class="l">已测单元</div><div class="v mono" id="kUnits">0</div></div>
+            <div class="kpi"><div class="l">单元良率</div><div class="v mono" id="kYield">—<span class="u">%</span></div></div>
+          </div>
+        </div>
+        <div class="sec">
+          <h3>当前条带</h3>
+          <dl class="kv">
+            <dt>条带 ID</dt><dd class="mono" id="cId">—</dd>
+            <dt>工序</dt><dd id="cPhase">待机</dd>
+            <dt>扎针进度</dt><dd><span class="mono" id="cTd">0 / 0</span><div class="progress" style="margin-top:4px"><i id="cProg" style="width:0%"></i></div></dd>
+            <dt>本条良率</dt><dd class="mono" id="cYield">—</dd>
+          </dl>
+        </div>
+        <div class="sec">
+          <h3>条带 Map · 30 列 × 24 行 = 720 单元</h3>
+          <svg class="map" id="map" viewBox="0 0 362 290" role="img" aria-label="条带单元测试结果图"></svg>
+          <div class="legend" style="margin-top:6px">
+            <span><i style="background:var(--surface-2);outline:1px solid var(--line)"></i>待测</span>
+            <span><i style="background:var(--accent)"></i>测试中</span>
+            <span><i style="background:var(--good)"></i>合格</span>
+            <span><i style="background:var(--crit)"></i>不合格</span>
+          </div>
+        </div>
+        <div class="sec">
+          <h3>条带良率趋势（近 20 条）</h3>
+          <svg id="yieldChart" viewBox="0 0 380 130" role="img" aria-label="条带良率趋势"></svg>
+        </div>
+        <div class="sec">
+          <h3>事件日志</h3>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+
+      <div class="pbody" id="tab-mat" hidden>
+        <div class="sec">
+          <h3>物料流</h3>
+          <div class="flow" id="flow"></div>
+        </div>
+        <div class="sec">
+          <h3>料盒</h3>
+          <div class="kpis">
+            <div class="kpi"><div class="l">上料盒余量</div><div class="v mono" id="mIn">25</div><div class="meter" style="margin-top:6px"><i id="mInBar" style="width:100%"></i></div></div>
+            <div class="kpi"><div class="l">OK 料盒</div><div class="v mono" id="mOk">0</div></div>
+            <div class="kpi"><div class="l">NG 料盒</div><div class="v mono" id="mNg">0</div></div>
+          </div>
+          <div class="btnrow" style="margin-top:8px">
+            <button id="btnRefill">补料（+25 条）</button>
+            <button id="btnEmptyOut">清空下料盒</button>
+          </div>
+        </div>
+        <div class="sec">
+          <h3>批次</h3>
+          <dl class="kv">
+            <dt>Lot</dt><dd class="mono" id="lotId">LOT-261023-A</dd>
+            <dt>计划 / 完成</dt><dd class="mono" id="lotProg">25 / 0</dd>
+            <dt>预计剩余</dt><dd class="mono" id="lotEta">—</dd>
+            <dt>条带规格</dt><dd>142 × 66 × 0.28 mm，6 层，720 单元</dd>
+            <dt>搬运方式</dt><dd>格栅窗口真空载具吸附条带背面格栅区，窗口露出 Bottom 焊盘</dd>
+            <dt>分选规则</dt><dd>单元良率 ≥ 97% 入 OK 盒，否则入 NG 盒；单元 Map 上传 CIM</dd>
+          </dl>
+        </div>
+        <div class="note">演示按串行节拍播放。实际整机上料、读码、对位与测试并行，瓶颈在测试工位，产能以扎针次数 × 1.2 s 加上下料换片时间估算。</div>
+      </div>
+
+      <div class="pbody" id="tab-test" hidden>
+        <div class="sec">
+          <h3>当前扎针</h3>
+          <dl class="kv">
+            <dt>次序</dt><dd class="mono" id="tTd">—</dd>
+            <dt>覆盖范围</dt><dd id="tCover">—</dd>
+            <dt>PPMU 通道</dt><dd class="mono" id="tCh">—</dd>
+            <dt>Sense 线</dt><dd class="mono" id="tSense">—</dd>
+          </dl>
+        </div>
+        <div class="sec">
+          <h3>测量链路</h3>
+          <dl class="kv">
+            <dt>Force</dt><dd>下针头 Pogo 针 → Bottom 0.35 mm 焊盘，EVA100 PPMU 施加电流</dd>
+            <dt>Sense / Gate</dt><dd>上针头钨丝针 → Top 0.12×0.15 mm 焊盘，Kelvin 取电压</dd>
+            <dt>VS1S2 读数</dt><dd>INA 前端 ×100 → 3:1 复用 → DGT 18 bit（12.5 µV）</dd>
+            <dt>防护</dt><dd>电流反向法消热电势；栅极电荷爬坡做接触检查；ESD 时序</dd>
+          </dl>
+        </div>
+        <div class="sec">
+          <h3>实时测量 <span class="hint">每单元 2 Die，显示较差值</span></h3>
+          <div class="tbl"><table id="measTbl">
+            <thead><tr><th>单元</th><th class="num">VF (V)</th><th class="num">IGSS (nA)</th><th class="num">VS1S2 (mV)</th><th>Bin</th></tr></thead>
+            <tbody><tr><td colspan="5" class="hint">等待扎针…</td></tr></tbody>
+          </table></div>
+        </div>
+        <div class="sec">
+          <h3>VS1S2 分布（累计）</h3>
+          <svg id="hist" viewBox="0 0 380 150" role="img" aria-label="VS1S2 直方图"></svg>
+        </div>
+        <div class="sec">
+          <h3>测试项目（演示规格，以美维 E-test Instruction 为准）</h3>
+          <table>
+            <thead><tr><th>项目</th><th>条件</th><th>限值</th><th>Bin</th></tr></thead>
+            <tbody>
+              <tr><td>VF 体二极管</td><td>IF 10 mA</td><td class="mono">0.50 – 0.90 V</td><td>2</td></tr>
+              <tr><td>IGSS 栅极漏电</td><td>VGS 5 V</td><td class="mono">≤ 100 nA</td><td>3</td></tr>
+              <tr><td>VS1S2 源间电压</td><td>Kelvin，电流反向</td><td class="mono">0.60 – 2.88 mV</td><td>4</td></tr>
+              <tr><td>接触检查</td><td>栅极电荷爬坡</td><td class="mono">开路判定</td><td>5</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="pbody" id="tab-maint" hidden>
+        <div class="sec">
+          <div class="btnrow">
+            <button id="btnMaint">进入维护模式</button>
+            <button id="btnAlarm" class="danger">触发示例报警</button>
+            <button id="btnAck" disabled>报警复位</button>
+          </div>
+          <div class="hint" style="margin-top:6px">维护模式：当前条带测完后停机，针头退到维护位，防护门打开并联锁。</div>
+        </div>
+        <div class="sec">
+          <h3>保养项目与寿命</h3>
+          <div id="mlist"></div>
+        </div>
+        <div class="sec">
+          <h3>每班点检</h3>
+          <div class="checks" id="checks">
+            <label><input type="checkbox" id="ck1"> 针尖目检（显微镜，上针头无弯针、下针头无卡滞）</label>
+            <label><input type="checkbox" id="ck2"> 真空压力 ≤ −80 kPa，载具吸附无漏气</label>
+            <label><input type="checkbox" id="ck3"> 对位相机标片复核，偏差 ≤ ±10 µm</label>
+            <label><input type="checkbox" id="ck4"> EVA100 自检通过，PPMU 校准在有效期内</label>
+            <label><input type="checkbox" id="ck5"> 接触不良率（Bin 5）前一班 ≤ 0.5%</label>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp = (a,b,t)=>a+(b-a)*t;
+const ease = t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+const fmt = (n,d=0)=>Number.isFinite(n)?n.toLocaleString('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const hms = s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return [h,m,x].map(v=>String(v).padStart(2,'0')).join(':');};
+
+/* ---------------- 配置与节拍 ---------------- */
+const COLS=30, ROWS=24, UNITS=720;
+const PX=14.2/COLS, PZ=6.6/ROWS;           // 单元节距（cm）
+const CONFIGS={
+  512:{ch:512, name:'512ch', perTd:48, N:15, frames:2, cover:k=>`第 ${2*k+1}–${2*k+2} 列 × 24 行`},
+  256:{ch:256, name:'256ch', perTd:24, N:30, frames:1, cover:k=>`第 ${k+1} 列 × 24 行`},
+  128:{ch:128, name:'128ch', perTd:12, N:60, frames:1, cover:k=>`第 ${Math.floor(k/2)+1} 列 · 第 ${k%2?13:1}–${k%2?24:12} 行`}
+};
+const T={LOAD:4, ALIGN:2.5, TRANSFER:3, STEP:.1, DOWN:.15, SETTLE:.1, CONTACT:.1, TEST:.6, UP:.15, UNLOAD:5.5};
+const TD=T.STEP+T.DOWN+T.SETTLE+T.CONTACT+T.TEST+T.UP; // 1.2
+const PHASE_CN={IDLE:'待机',LOAD:'上料 · 料盒推片',ALIGN:'读码 · Top 面光学对位',TRANSFER:'转载到真空载具',STEP:'载具步进',DOWN:'上下针头合针',SETTLE:'接触稳定',CONTACT:'接触检查（栅极电荷爬坡）',TEST:'测试 VF / IGSS / VS1S2',UP:'针头抬起',UNLOAD:'下料 · 按良率分选',WAIT:'待料 · 上料盒空',MAINT:'维护模式',ALARM:'报警停机',CLEAN:'针尖清洁'};
+const MACRO=[['LOAD','上料',T.LOAD,'--s1'],['ALIGN','对位',T.ALIGN,'--s2'],['TRANSFER','转载',T.TRANSFER,'--s3'],['PROBE','扎针测试',0,'--s4'],['UNLOAD','下料',T.UNLOAD,'--s5']];
+const MICRO=[['STEP','步进',T.STEP,'--seq-250'],['DOWN','合针',T.DOWN,'--seq-350'],['SETTLE','稳定',T.SETTLE,'--seq-450'],['CONTACT','接触检查',T.CONTACT,'--seq-550'],['TEST','测试',T.TEST,'--seq-650'],['UP','抬起',T.UP,'--seq-350']];
+
+function tdUnits(cfg,k){
+  const u=[];
+  if(cfg.ch===512){ for(const c of [2*k,2*k+1]) for(let r=0;r<ROWS;r++) u.push(c*ROWS+r); }
+  else if(cfg.ch===256){ for(let r=0;r<ROWS;r++) u.push(k*ROWS+r); }
+  else { const c=Math.floor(k/2), r0=(k%2)*12; for(let r=r0;r<r0+12;r++) u.push(c*ROWS+r); }
+  return u;
+}
+// 被测区域中心在条带坐标中的位置 → 载具需移动到的位置（使被测区域位于针头正下方）
+function tdCenter(cfg,k){
+  let cx,cz=0;
+  if(cfg.ch===512) cx=-7.1+PX*(2*k+1);
+  else if(cfg.ch===256) cx=-7.1+PX*(k+.5);
+  else { cx=-7.1+PX*(Math.floor(k/2)+.5); cz=(k%2?1:-1)*(6.6/4); }
+  return {x:-cx, z:-cz};
+}
+
+/* ---------------- 状态 ---------------- */
+const S={
+  cfg:CONFIGS[512], speed:1, running:false, maint:false, maintPending:false, alarm:null,
+  simTime:0, sched:null, si:0, pt:0, phase:'IDLE',
+  seq:0, lot:'LOT-261023-A', planned:25, input:25, ok:0, ng:0,
+  strips:0, units:0, pass:0, fail:0, cycles:[], yields:[],
+  cur:null, hist:new Array(40).fill(0), lastMeas:[], explode:false, view:'overview', tab:'run',
+  clean:null, // 清洁动画
+  maintItems:[
+    {id:'top', name:'上针头 钨丝针', part:'topHead', unit:'次扎针', life:500000, used:312480, act:'更换针头', desc:'接触 Top 0.12×0.15 mm 焊盘，寿命以扎针次数计'},
+    {id:'bot', name:'下针头 Pogo 针', part:'bottomHead', unit:'次扎针', life:300000, used:201300, act:'更换 Pogo 针', desc:'接触 Bottom 0.35 mm 焊盘，承担 Force 电流'},
+    {id:'cln', name:'针尖清洁', part:'topHead', unit:'次扎针', life:5000, used:3820, act:'执行清洁', desc:'上清洁片，双面各扎 3 次去除焊盘氧化物与碎屑'},
+    {id:'vac', name:'真空滤芯', part:'vacuum', unit:'h', life:2000, used:1460, act:'更换滤芯', desc:'载具真空回路，压降超限会导致薄板翘曲'},
+    {id:'cam', name:'对位相机标定', part:'camera', unit:'h', life:720, used:410, act:'执行标定', desc:'标片复核相机像素当量与针头偏置'},
+    {id:'rail', name:'导轨 / 丝杆润滑', part:'track', unit:'h', life:1000, used:620, act:'已润滑', desc:'载具 XY 步进与轨道输送'},
+    {id:'grr', name:'对位精度 GR&R 复核', part:'carrier', unit:'h', life:168, used:120, act:'已复核', desc:'Top ±25 µm 目标，Bottom ±100 µm 允差'}
+  ]
+};
+
+/* ---------------- 日志 ---------------- */
+const logEl=$('log');
+function log(msg,cls=''){
+  const d=document.createElement('div');
+  d.innerHTML=`<span class="t mono">${hms(S.simTime)}</span><span class="${cls}">${msg}</span>`;
+  logEl.prepend(d);
+  while(logEl.children.length>80) logEl.lastChild.remove();
+}
+
+/* ---------------- 条带与排程 ---------------- */
+function newStrip(){
+  S.seq++;
+  const id=`GME-MOS-2610-${String(S.seq).padStart(4,'0')}`;
+  const cur={id, res:new Uint8Array(UNITS), vals:new Float32Array(UNITS*3), bin:new Uint8Array(UNITS), k:-1, start:S.simTime, cluster:null, tdDone:0};
+  if(Math.random()<.12){ const c=Math.floor(Math.random()*COLS), r0=Math.floor(Math.random()*16); cur.cluster={c, r0, r1:r0+8}; }
+  const sch=[{n:'LOAD',d:T.LOAD},{n:'ALIGN',d:T.ALIGN},{n:'TRANSFER',d:T.TRANSFER}];
+  for(let k=0;k<S.cfg.N;k++) for(const m of MICRO) sch.push({n:m[0],d:m[2],k});
+  sch.push({n:'UNLOAD',d:T.UNLOAD});
+  S.cur=cur; S.sched=sch; S.si=0; S.pt=0; S.input--;
+  mapDirty=true; stripTexDirty=true;
+  log(`${id} 上料，开始测试（${S.cfg.name}，${S.cfg.N} 次扎针）`);
+  onEnter(sch[0]);
+}
+function measureUnit(idx){
+  const c=Math.floor(idx/ROWS), r=idx%ROWS, cu=S.cur.cluster;
+  let vf=.72+randn()*.02, ig=Math.exp(Math.log(4)+randn()*.6), vs=1.55+randn()*.33, bin=1;
+  const x=Math.random();
+  const clustered=cu&&c===cu.c&&r>=cu.r0&&r<cu.r1;
+  if(x<.003){ bin=5; vf=NaN; ig=NaN; vs=NaN; }
+  else if(x<.009||(clustered&&Math.random()<.35)) vs=3.1+Math.random()*1.4;
+  else if(x<.012) ig=150+Math.random()*900;
+  else if(x<.014) vf=.95+Math.random()*.3;
+  if(bin!==5){ if(vf<.5||vf>.9) bin=2; else if(ig>100) bin=3; else if(vs<.6||vs>2.88) bin=4; }
+  return {vf,ig,vs,bin};
+}
+function onEnter(seg){
+  S.phase=seg.n;
+  const cur=S.cur, cfg=S.cfg;
+  if(seg.n==='STEP'){ cur.k=seg.k; cur.prevPos=cur.k===0?tdCenter(cfg,0):tdCenter(cfg,seg.k-1); cur.nextPos=tdCenter(cfg,seg.k); }
+  if(seg.n==='TEST'){
+    S.lastMeas=[];
+    for(const i of tdUnits(cfg,seg.k)){ cur.res[i]=1; S.lastMeas.push({i, pending:true}); }
+    mapDirty=true; stripTexDirty=true; measDirty=true;
+  }
+}
+function onExit(seg){
+  const cur=S.cur, cfg=S.cfg;
+  if(seg.n==='ALIGN'){ cur.align={dx:(randn()*6).toFixed(0), dy:(randn()*6).toFixed(0), th:(randn()*.004).toFixed(3)}; }
+  if(seg.n==='TEST'){
+    let f=0;
+    S.lastMeas=[];
+    for(const i of tdUnits(cfg,seg.k)){
+      const m=measureUnit(i);
+      cur.vals[i*3]=m.vf; cur.vals[i*3+1]=m.ig; cur.vals[i*3+2]=m.vs; cur.bin[i]=m.bin;
+      cur.res[i]=m.bin===1?2:3; if(m.bin!==1) f++;
+      if(Number.isFinite(m.vs)){ const b=clamp(Math.floor(m.vs/.1),0,39); S.hist[b]++; }
+      S.lastMeas.push({i, ...m});
+      if(m.bin===5) log(`${cur.id} 单元 C${Math.floor(i/ROWS)+1}R${i%ROWS+1} 接触不良（Bin 5）`,'w');
+    }
+    cur.tdDone++;
+    for(const it of S.maintItems) if(it.unit==='次扎针') it.used++;
+    mapDirty=true; stripTexDirty=true; measDirty=true; histDirty=true;
+  }
+  if(seg.n==='UNLOAD'){
+    let p=0; for(let i=0;i<UNITS;i++) if(cur.res[i]===2) p++;
+    const y=p/UNITS*100, okStrip=y>=97;
+    S.strips++; S.units+=UNITS; S.pass+=p; S.fail+=UNITS-p;
+    S.cycles.push(S.simTime-cur.start); if(S.cycles.length>5) S.cycles.shift();
+    S.yields.push({id:cur.id,y}); if(S.yields.length>20) S.yields.shift();
+    if(okStrip) S.ok++; else S.ng++;
+    log(`${cur.id} 完成，良率 ${y.toFixed(2)}%，${okStrip?'入 OK 料盒':'入 NG 料盒'}，节拍 ${(S.simTime-cur.start).toFixed(1)} s`, okStrip?'ok':'w');
+    S.sched=null; S.cur=null; S.phase='IDLE'; yieldDirty=true;
+    if(S.maintPending){ enterMaint(); }
+  }
+}
+function advance(dt){
+  if(S.alarm) return;
+  if(S.clean){ S.clean.t+=dt; S.simTime+=dt; if(S.clean.t>=S.clean.dur){ S.clean=null; log('针尖清洁完成','ok'); } tickHours(dt); return; }
+  if(S.maint){ S.simTime+=dt; return; }
+  let rem=dt;
+  while(rem>0){
+    if(!S.sched){
+      if(!S.running){ S.simTime+=rem; return; }
+      if(S.input<=0){ S.phase='WAIT'; S.simTime+=rem; tickHours(rem); return; }
+      newStrip();
+    }
+    const seg=S.sched[S.si];
+    const step=Math.min(rem,seg.d-S.pt);
+    S.pt+=step; S.simTime+=step; rem-=step; tickHours(step);
+    if(S.pt>=seg.d-1e-9){
+      onExit(seg);
+      if(!S.sched) continue;
+      S.si++; S.pt=0;
+      if(S.si<S.sched.length) onEnter(S.sched[S.si]);
+    }
+  }
+}
+function tickHours(dt){ for(const it of S.maintItems) if(it.unit==='h') it.used+=dt/3600; }
+
+/* ---------------- 三维场景 ---------------- */
+const canvas=$('c3d'), vp=$('viewport');
+const renderer=new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,1,2000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=.08; controls.maxPolarAngle=Math.PI*.52; controls.minDistance=12; controls.maxDistance=600;
+const hemi=new THREE.HemisphereLight(0xffffff,0x6b7480,.75); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,.9); sun.position.set(120,220,160); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); const sc=sun.shadow.camera; sc.left=-200; sc.right=200; sc.top=200; sc.bottom=-200; sc.near=50; sc.far=600; sun.shadow.bias=-.0005;
+scene.add(sun);
+const fill=new THREE.DirectionalLight(0xdfe8ff,.35); fill.position.set(-150,120,-100); scene.add(fill);
+
+const std=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.55,metalness:.1},o));
+const M={
+  frame:std(0xd6d9d4), base:std(0x30363c,{roughness:.7}), granite:std(0x3c4148,{roughness:.35,metalness:.15}),
+  alu:std(0x9ea7b0,{metalness:.55,roughness:.35}), steel:std(0xb9bec5,{metalness:.8,roughness:.3}), dark:std(0x23292f),
+  navy:std(0x24405f), gold:std(0xc9a44a,{metalness:.7,roughness:.3}), white:std(0xf2f3f1), acrylic:std(0x9ccbf5,{transparent:true,opacity:.22,roughness:.1}),
+  cable:std(0x1c1e21,{roughness:.9}), screen:std(0x1a2f4a,{emissive:0x1e6fd0,emissiveIntensity:.9}), eva:std(0xe9eae6), evaBand:std(0x1f3a63),
+  lampR:std(0x5a1b1b,{emissive:0xd03b3b,emissiveIntensity:0}), lampY:std(0x5a4a10,{emissive:0xfab219,emissiveIntensity:0}), lampG:std(0x1b4a1b,{emissive:0x0ca30c,emissiveIntensity:0}),
+  ring:std(0xffffff,{emissive:0xffffff,emissiveIntensity:.1}), ceramic:std(0xf6f4ee,{roughness:.8}), curtain:std(0x3a3f45,{emissive:0xd03b3b,emissiveIntensity:.25})
+};
+const PARTS={}; // key → {info, meshes}
+const INFO={
+  base:['机架 / 电气柜','焊接钢架 + 花岗岩平台，整机刚性基础；柜内为真空单元、运动控制器、EVA100 接口板与电源。'],
+  doors:['防护门','维护时打开，门磁联锁：开门即停机并断开针头 Z 轴使能。'],
+  loader:['上料模组','料盒 25 条/盒，升降 + 推片把条带逐条送入轨道；料盒空时亮黄灯待料。'],
+  reader:['读码器','读取条带二维码，建立 Lot / 条带 ID 与 CIM V5.0 的对应，测试 Map 按 ID 上传。'],
+  camera:['上视对位相机','只对 Top 面 Mark 对位（Top 焊盘 0.12×0.15 mm，允差 ±35 µm，预算 ±17 µm）。Bottom 焊盘 0.35 mm，允差 ±100 µm，由同框架机械基准保证。'],
+  track:['输送轨道','夹边输送，条带中部不接触，避免刮伤 Bottom 焊盘。'],
+  carrier:['格栅窗口真空载具','吸附条带背面格栅区，窗口露出 Bottom 焊盘给下针头；XY 步进把被测列送到针头正下方。'],
+  stripper:['上压板（Stripper）','先于针尖压住条带，抑制 0.28 mm 薄板翘曲，并在抬针时把条带从针尖剥离。'],
+  topHead:['上针头','微细钨丝针阵列，接触 Top 面 8 个焊盘；承担 Sense 与 Gate，4 路 Sense 进 INA 前端。'],
+  bottomHead:['下针头','Pogo 针阵列，接触 Bottom 面 9 个焊盘 + 中心焊盘；承担 Force 电流，由 EVA100 PPMU 驱动。'],
+  gantry:['刚性 C 型框架','上下针头共用同一框架，一次对位两面同轴，避免两套机构叠加误差。'],
+  ina:['INA 前端板','4 路 Sense 差分放大 ×1 / ×100，3:1 复用进 EVA100 DGT，用于 0.6–2.88 mV 的 VS1S2。'],
+  eva:['Advantest EVA100','测试源：每针 PPMU（−1.25 ~ +7 V，±32 mA，1 nA 分辨率）、DPS、AWG/DGT 18 bit。128/256 ch 一台主机，512 ch 两台。'],
+  cable:['测试头电缆','PPMU 通道与 Sense 线从 EVA100 测试头到上下针头，Sense 走屏蔽双绞。'],
+  unloader:['下料分选','按条带良率分 OK / NG 料盒；Map 与 Bin 统计同步上传。'],
+  hmi:['操作屏（HMI）','配方、实时 Map、节拍与良率、报警与维护提醒；CIM V5.0 接口。'],
+  tower:['三色灯','绿：运行；黄：待料 / 维护；红：报警停机。'],
+  curtain:['安全光幕','上下料区人体进入即停机。'],
+  vacuum:['真空单元','真空泵 + 滤芯 + 压力传感器，为载具吸附供气；压力低于 −80 kPa 报警。'],
+  controller:['运动控制器','XY 步进、Z 合针、输送与料盒升降的伺服控制，与 EVA100 握手。'],
+  clean:['清洁片','维护时上清洁片，上下针头各扎 3 次去除氧化物。']
+};
+function reg(key,mesh){ mesh.userData.part=key; (PARTS[key]||(PARTS[key]={meshes:[]})).meshes.push(mesh); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
+function box(w,h,d,mat,x=0,y=0,z=0,key){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); if(key) reg(key,m); return m; }
+function cyl(r,h,mat,x=0,y=0,z=0,key,seg=24){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),mat); m.position.set(x,y,z); if(key) reg(key,m); return m; }
+
+// 地面
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(900,900),std(0xcccccc,{roughness:.95}));
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+const grid=new THREE.GridHelper(900,45,0x888888,0x888888); grid.position.y=.05; scene.add(grid);
+
+// 机架
+const machine=new THREE.Group(); scene.add(machine);
+machine.add(box(200,74,110,M.frame,0,38,0,'base'));
+machine.add(box(204,4,114,M.base,0,2,0,'base'));
+machine.add(box(196,8,106,M.granite,0,79,0,'base'));
+// 柜内设备（开门可见）
+machine.add(box(40,30,30,M.dark,-60,20,20,'vacuum'));
+machine.add(cyl(9,26,M.alu,-60,48,20,'vacuum'));
+machine.add(box(60,40,28,M.navy,20,25,20,'controller'));
+// 防护门（左右两扇，铰链在外侧）
+const doorL=new THREE.Group(), doorR=new THREE.Group();
+doorL.position.set(-98,0,56); doorR.position.set(98,0,56);
+doorL.add(box(94,62,1.6,M.acrylic,47,43,0,'doors')); doorL.add(box(94,3,2,M.alu,47,13,0,'doors')); doorL.add(box(94,3,2,M.alu,47,73,0,'doors'));
+doorR.add(box(94,62,1.6,M.acrylic,-47,43,0,'doors')); doorR.add(box(94,3,2,M.alu,-47,13,0,'doors')); doorR.add(box(94,3,2,M.alu,-47,73,0,'doors'));
+machine.add(doorL,doorR);
+// 安全光幕
+for(const x of [-100,100]){ machine.add(box(2.4,46,2.4,M.curtain,x,106,52,'curtain')); }
+// 轨道
+machine.add(box(172,3,2,M.alu,0,96.5,-5,'track')); machine.add(box(172,3,2,M.alu,0,96.5,5,'track'));
+for(let x=-80;x<=80;x+=20) machine.add(box(3,12,12,M.steel,x,89,0,'track'));
+// 上料模组
+const loaderG=new THREE.Group(); loaderG.position.set(-82,0,0); machine.add(loaderG);
+loaderG.add(box(20,46,2,M.alu,0,106,-6,'loader')); loaderG.add(box(20,46,2,M.alu,0,106,6,'loader'));
+loaderG.add(box(2,46,14,M.alu,-10,106,0,'loader')); loaderG.add(box(22,3,16,M.dark,0,84.5,0,'loader'));
+loaderG.add(box(6,24,6,M.steel,-16,95,0,'loader'));
+loaderG.add(box(4,4,8,M.dark,16,105,0,'reader'));
+// 对位相机
+machine.add(cyl(1.5,30,M.steel,-45,112,-14,'camera'));
+machine.add(box(12,3,30,M.alu,-45,127,0,'camera'));
+machine.add(box(5,8,5,M.dark,-45,120,0,'camera'));
+const ringLight=new THREE.Mesh(new THREE.TorusGeometry(3.4,.7,10,32),M.ring); ringLight.rotation.x=Math.PI/2; ringLight.position.set(-45,114.5,0); reg('camera',ringLight); machine.add(ringLight);
+// 下料分选
+const unG=new THREE.Group(); unG.position.set(82,0,0); machine.add(unG);
+for(const z of [-10,10]){ unG.add(box(20,46,2,M.alu,0,106,z-7,'unloader')); unG.add(box(20,46,2,M.alu,0,106,z+7,'unloader')); unG.add(box(22,3,18,M.dark,0,84.5,z,'unloader')); }
+unG.add(box(2,46,36,M.alu,11,106,0,'unloader'));
+unG.add(box(6,4,20,M.steel,-13,99,0,'unloader'));
+// 刚性框架 + 针头
+const gantry=new THREE.Group(); machine.add(gantry);
+gantry.add(box(16,72,16,M.frame,0,119,-34,'gantry')); gantry.add(box(16,72,16,M.frame,0,119,34,'gantry'));
+gantry.add(box(16,14,84,M.frame,0,151,0,'gantry'));
+gantry.add(box(20,4,100,M.base,0,85,0,'gantry'));
+gantry.add(box(10,6,14,M.navy,0,160,-20,'ina'));
+// 三色灯
+const towerBase=cyl(1,10,M.steel,0,163,30,'tower'); gantry.add(towerBase);
+const lampG=cyl(2.4,4,M.lampG,0,170,30,'tower',16), lampY=cyl(2.4,4,M.lampY,0,174.2,30,'tower',16), lampR=cyl(2.4,4,M.lampR,0,178.4,30,'tower',16);
+gantry.add(lampG,lampY,lampR);
+// 上针头组（Z 轴滑块 + 针头 + 压板）
+const topHead=new THREE.Group(); gantry.add(topHead);
+topHead.add(box(8,26,10,M.alu,0,20,0,'topHead'));
+topHead.add(box(7,9,12,M.navy,0,4.5,0,'topHead'));
+topHead.add(box(4,1.2,8,M.gold,0,-.4,0,'topHead'));
+const stripper=new THREE.Group(); topHead.add(stripper);
+stripper.add(box(10,.6,14,M.white,0,-1.4,0,'stripper'));
+// 下针头组
+const bottomHead=new THREE.Group(); gantry.add(bottomHead);
+bottomHead.add(box(8,8,12,M.navy,0,-6,0,'bottomHead'));
+bottomHead.add(box(4,1.2,8,M.gold,0,-1.4,0,'bottomHead'));
+bottomHead.add(box(12,6,16,M.alu,0,-13,0,'bottomHead'));
+const TOP_UP=108, TOP_DN=100.75, TOP_SVC=122, BOT_UP=99.1, BOT_DN=92, BOT_SVC=88;
+topHead.position.y=TOP_UP; bottomHead.position.y=BOT_DN;
+// 载具
+const carrier=new THREE.Group(); machine.add(carrier);
+const CARRIER_Y=99.3;
+carrier.position.set(0,CARRIER_Y,0);
+carrier.add(box(16.4,1,1.2,M.alu,0,0,-4.1,'carrier')); carrier.add(box(16.4,1,1.2,M.alu,0,0,4.1,'carrier'));
+carrier.add(box(1.2,1,9.4,M.alu,-7.6,0,0,'carrier')); carrier.add(box(1.2,1,9.4,M.alu,7.6,0,0,'carrier'));
+for(let i=-2;i<=2;i++) carrier.add(box(.5,.8,9,M.alu,i*2.9,0,0,'carrier'));
+carrier.add(box(16.4,2,12,M.steel,0,-1.6,0,'carrier'));
+// EVA100 主机（128/256 一台，512 两台）
+const evaG=new THREE.Group(); machine.add(evaG);
+function evaUnit(x){
+  const g=new THREE.Group(); g.position.x=x;
+  g.add(box(62,88,52,M.eva,0,44,0,'eva')); g.add(box(62.5,6,52.5,M.evaBand,0,70,0,'eva'));
+  g.add(box(44,24,36,M.dark,0,104,0,'eva')); g.add(box(34,16,.5,M.screen,0,50,26.3,'eva'));
+  const label=box(30,1.5,.4,M.evaBand,0,62,26.3,'eva'); g.add(label);
+  return g;
+}
+evaG.position.set(0,0,-84);
+const eva1=evaUnit(-36), eva2=evaUnit(36); evaG.add(eva1,eva2);
+// 电缆（TubeGeometry）
+function tube(pts,r,key){ const c=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))); const m=new THREE.Mesh(new THREE.TubeGeometry(c,48,r,8,false),M.cable); reg(key,m); return m; }
+const cableTop=tube([[0,134,0],[0,145,-20],[0,135,-55],[-20,118,-84]],1.4,'cable');
+const cableBot=tube([[0,86,-8],[0,84,-30],[0,100,-60],[20,118,-84]],1.4,'cable');
+machine.add(cableTop,cableBot);
+// HMI
+const hmiArm=cyl(1.6,40,M.steel,70,100,56,'hmi'); machine.add(hmiArm);
+const hmi=box(34,22,2,M.dark,70,124,56,'hmi'); machine.add(hmi);
+const hmiScreen=box(31,19,.4,M.screen,70,124,57.3,'hmi'); machine.add(hmiScreen);
+// 清洁片（维护用）
+const cleanSheet=box(14.2,.12,6.6,M.ceramic,0,0,0,'clean'); cleanSheet.visible=false; carrier.add(cleanSheet); cleanSheet.position.y=.6;
+
+// 条带：顶面 / 底面纹理
+function stripCanvas(top){
+  const cv=document.createElement('canvas'); cv.width=600; cv.height=280; const g=cv.getContext('2d');
+  g.fillStyle=top?'#2d6a46':'#2a5f41'; g.fillRect(0,0,600,280);
+  g.fillStyle='#d8a94a';
+  for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+    const x=c*20, y=r*11.67;
+    if(top){ for(let p=0;p<4;p++){ g.fillRect(x+3+p*4,y+2,2,2); g.fillRect(x+3+p*4,y+7,2,2); } }
+    else { for(let p=0;p<3;p++) for(let q=0;q<3;q++) g.fillRect(x+3+p*5.5,y+1.5+q*3.3,2.6,2.2); }
+  }
+  g.strokeStyle='rgba(255,255,255,.18)'; g.lineWidth=.5;
+  for(let c=1;c<COLS;c++){ g.beginPath(); g.moveTo(c*20,0); g.lineTo(c*20,280); g.stroke(); }
+  for(let r=1;r<ROWS;r++){ g.beginPath(); g.moveTo(0,r*11.67); g.lineTo(600,r*11.67); g.stroke(); }
+  return cv;
+}
+const topBase=stripCanvas(true), botBase=stripCanvas(false);
+const topCv=document.createElement('canvas'); topCv.width=600; topCv.height=280; const topG=topCv.getContext('2d');
+const topTex=new THREE.CanvasTexture(topCv), botTex=new THREE.CanvasTexture(botBase);
+topTex.encoding=botTex.encoding=THREE.sRGBEncoding;
+function paintStripTexture(res){
+  topG.drawImage(topBase,0,0);
+  if(res){ for(let i=0;i<UNITS;i++){ const s=res[i]; if(!s) continue; const c=Math.floor(i/ROWS), r=i%ROWS;
+    topG.fillStyle=s===1?'rgba(57,135,229,.75)':s===2?'rgba(12,163,12,.55)':'rgba(208,59,59,.8)'; topG.fillRect(c*20+.5,r*11.67+.5,19,10.7); } }
+  topTex.needsUpdate=true;
+}
+paintStripTexture(null);
+const sideMat=std(0x1f4a30);
+const stripMesh=new THREE.Mesh(new THREE.BoxGeometry(14.2,.12,6.6),[sideMat,sideMat,new THREE.MeshStandardMaterial({map:topTex,roughness:.5}),new THREE.MeshStandardMaterial({map:botTex,roughness:.5}),sideMat,sideMat]);
+stripMesh.castShadow=true; stripMesh.userData.part='strip'; machine.add(stripMesh); stripMesh.visible=false;
+INFO.strip=['被测条带','142×66×0.28 mm，6 层，30×24 = 720 单元，每单元 2 颗 Nuvoton KFCAB12003NL 双 N-MOS 埋在 L4；Top 8 焊盘，Bottom 9 焊盘 + 中心焊盘。'];
+const STRIP_Y=CARRIER_Y+.62;
+// 料盒中的条带堆
+const stackMat=std(0x2d6a46);
+const inStack=new THREE.InstancedMesh(new THREE.BoxGeometry(14.2,.3,6.6),stackMat,40); inStack.castShadow=true; machine.add(inStack);
+const okStack=new THREE.InstancedMesh(new THREE.BoxGeometry(14.2,.3,6.6),stackMat,60); machine.add(okStack);
+const ngStack=new THREE.InstancedMesh(new THREE.BoxGeometry(14.2,.3,6.6),std(0x8a3a3a),60); machine.add(ngStack);
+const _m=new THREE.Matrix4();
+function fillStack(inst,n,x,z){ inst.count=Math.min(n,inst.instanceMatrix.count); for(let i=0;i<inst.count;i++){ _m.makeTranslation(x,86.4+i*.42,z); inst.setMatrixAt(i,_m); } inst.instanceMatrix.needsUpdate=true; }
+
+/* ---------------- 相机视角 ---------------- */
+const VIEWS={
+  overview:{p:[175,150,235],t:[0,75,0]}, station:{p:[52,128,74],t:[0,100,0]}, top:{p:[24,116,30],t:[0,103,0]},
+  bottom:{p:[30,96,34],t:[0,96,0]}, section:{p:[0,108,44],t:[0,101,0]}, material:{p:[40,230,150],t:[0,90,0]}
+};
+let camAnim=null;
+function setView(v,instant){
+  S.view=v; document.querySelectorAll('#views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  const d=VIEWS[v];
+  if(instant){ camera.position.set(...d.p); controls.target.set(...d.t); controls.update(); return; }
+  camAnim={t:0, p0:camera.position.clone(), t0:controls.target.clone(), p1:new THREE.Vector3(...d.p), t1:new THREE.Vector3(...d.t)};
+  const transparent=v==='section'||v==='top'||v==='bottom';
+  for(const m of PARTS.gantry.meshes) { m.material=transparent?M.acrylic:M.frame; }
+  PARTS.gantry.meshes[3].material=transparent?M.acrylic:M.base;
+}
+setView('overview',true);
+
+/* ---------------- 主题跟随 ---------------- */
+function applyTheme(){
+  renderer.setClearColor(new THREE.Color(tok('--scene-bg')));
+  floor.material.color.set(tok('--scene-floor'));
+  const gc=new THREE.Color(tok('--scene-grid')); grid.material.color.set(gc); grid.material.vertexColors=false;
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------------- 尺寸 ---------------- */
+function resize(){ const w=vp.clientWidth, h=vp.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(vp); resize();
+
+/* ---------------- 悬停 / 点击 ---------------- */
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let hover=null, pinned=null;
+const ptip=$('ptip');
+function pick(ev){
+  const r=canvas.getBoundingClientRect(); ptr.x=((ev.clientX-r.left)/r.width)*2-1; ptr.y=-((ev.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(machine.children,true).filter(h=>h.object.userData.part&&h.object.visible&&h.object.material!==M.acrylic);
+  return hits.length?hits[0]:null;
+}
+function setHighlight(key,on){ if(!key||!PARTS[key]) return; for(const m of PARTS[key].meshes){ if(m.material===M.acrylic) continue; m.material=on?hl(m.material):(m.userData.orig||m.material); } }
+const hlCache=new Map();
+function hl(mat){ if(!hlCache.has(mat)){ const c=mat.clone(); c.emissive=new THREE.Color(0x3987e5); c.emissiveIntensity=.45; c.userData.base=mat; hlCache.set(mat,c);} return hlCache.get(mat); }
+for(const k in PARTS) for(const m of PARTS[k].meshes) m.userData.orig=m.material;
+function showInfo(key){ const i=INFO[key]; $('partinfo').innerHTML=i?`<b>${i[0]}</b><span>${i[1]}</span>`:`<b>部件说明</b><span>把鼠标移到 3D 部件上查看功能；点击可固定。拖动旋转，滚轮缩放，右键平移。</span>`; }
+canvas.addEventListener('pointermove',ev=>{
+  if(ev.pointerType==='touch') return;
+  const h=pick(ev); const key=h?h.object.userData.part:null;
+  if(key!==hover){ if(hover&&hover!==pinned) setHighlight(hover,false); hover=key; if(hover) setHighlight(hover,true); if(!pinned) showInfo(hover); }
+  if(h&&INFO[key]){ ptip.hidden=false; ptip.textContent=INFO[key][0]; const r=canvas.getBoundingClientRect(); ptip.style.left=(ev.clientX-r.left)+'px'; ptip.style.top=(ev.clientY-r.top)+'px'; } else ptip.hidden=true;
+});
+canvas.addEventListener('pointerleave',()=>{ ptip.hidden=true; if(hover&&hover!==pinned) setHighlight(hover,false); hover=null; if(!pinned) showInfo(null); });
+let downAt=null;
+canvas.addEventListener('pointerdown',ev=>{ downAt=[ev.clientX,ev.clientY]; });
+canvas.addEventListener('pointerup',ev=>{
+  if(!downAt||Math.hypot(ev.clientX-downAt[0],ev.clientY-downAt[1])>6) return;
+  const h=pick(ev); const key=h?h.object.userData.part:null;
+  if(pinned) setHighlight(pinned,false);
+  pinned=(key&&key!==pinned)?key:null; if(pinned) setHighlight(pinned,true); showInfo(pinned);
+});
+
+/* ---------------- 三维标签（剖视 / 分层） ---------------- */
+const LABELS=[
+  {obj:topHead, off:[0,22,0], text:'上针头 · 钨丝针 · Sense + Gate'},
+  {obj:stripper, off:[0,-1.4,-7], text:'上压板 Stripper'},
+  {obj:stripMesh, off:[7.1,0,0], text:'条带 142×66×0.28 mm'},
+  {obj:carrier, off:[-8.2,0,0], text:'格栅窗口真空载具'},
+  {obj:bottomHead, off:[0,-14,0], text:'下针头 · Pogo · Force'}
+];
+const labelsEl=$('labels'); const labelDivs=LABELS.map(l=>{ const d=document.createElement('div'); d.className='lbl'; d.textContent=l.text; d.hidden=true; labelsEl.appendChild(d); return d; });
+const _v=new THREE.Vector3();
+function updateLabels(){
+  const show=S.explode||S.view==='section';
+  LABELS.forEach((l,i)=>{
+    const d=labelDivs[i];
+    if(!show||!l.obj.visible){ d.hidden=true; return; }
+    l.obj.getWorldPosition(_v); _v.x+=l.off[0]; _v.y+=l.off[1]; _v.z+=l.off[2]; _v.project(camera);
+    if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){ d.hidden=true; return; }
+    d.hidden=false; d.style.left=((_v.x+1)/2*100)+'%'; d.style.top=((1-_v.y)/2*100)+'%';
+  });
+}
+
+/* ---------------- 动画 ---------------- */
+let exp=0; // 分层展开量 0..1
+function anim(dt){
+  if(camAnim){ camAnim.t=Math.min(1,camAnim.t+dt/.9); const e=ease(camAnim.t); camera.position.lerpVectors(camAnim.p0,camAnim.p1,e); controls.target.lerpVectors(camAnim.t0,camAnim.t1,e); if(camAnim.t>=1) camAnim=null; }
+  controls.update();
+  exp+= ((S.explode?1:0)-exp)*Math.min(1,dt*4);
+  const seg=S.sched?S.sched[S.si]:null, p=seg?S.pt/seg.d:0, cur=S.cur, cfg=S.cfg;
+  // 针头 Z
+  let topY=TOP_UP, botY=BOT_DN;
+  if(S.maint){ topY=TOP_SVC; botY=BOT_SVC; }
+  else if(S.clean){ const c=S.clean; const ph=(c.t%2)/2; const z=ph<.3?ease(ph/.3):ph<.7?1:1-ease((ph-.7)/.3); topY=lerp(TOP_UP,TOP_DN,z); botY=lerp(BOT_DN,BOT_UP,z); }
+  else if(seg){
+    if(seg.n==='DOWN'){ topY=lerp(TOP_UP,TOP_DN,ease(p)); botY=lerp(BOT_DN,BOT_UP,ease(p)); }
+    else if(seg.n==='SETTLE'||seg.n==='CONTACT'||seg.n==='TEST'){ topY=TOP_DN; botY=BOT_UP; }
+    else if(seg.n==='UP'){ topY=lerp(TOP_DN,TOP_UP,ease(p)); botY=lerp(BOT_UP,BOT_DN,ease(p)); }
+  }
+  topHead.position.y=topY+exp*16; bottomHead.position.y=botY-exp*10; stripper.position.y=exp*-6;
+  // 载具与条带
+  let carX=0, carZ=0, stripVisible=false, sx=0, sy=STRIP_Y, sz=0, onCarrier=false;
+  if(cur&&seg){
+    const p0=tdCenter(cfg,0);
+    if(seg.n==='LOAD'){ stripVisible=true; sx=lerp(-82,-45,ease(p)); sy=STRIP_Y; carX=p0.x; carZ=p0.z; }
+    else if(seg.n==='ALIGN'){ stripVisible=true; sx=-45; carX=p0.x; carZ=p0.z; }
+    else if(seg.n==='TRANSFER'){ stripVisible=true; sx=lerp(-45,p0.x,ease(p)); sz=lerp(0,p0.z,ease(p)); carX=p0.x; carZ=p0.z; }
+    else if(seg.n==='UNLOAD'){
+      const okStrip=null; // 分选在结束时决定；动画按当前良率预判
+      let pz=0; for(let i=0;i<UNITS;i++) if(cur.res[i]===2) pz++; const toOk=pz/UNITS>=.97;
+      const last=tdCenter(cfg,cfg.N-1);
+      if(p<.2){ const q=ease(p/.2); carX=lerp(last.x,20,q); carZ=lerp(last.z,0,q); stripVisible=true; onCarrier=true; }
+      else if(p<.75){ const q=ease((p-.2)/.55); carX=lerp(20,p0.x,clamp((p-.3)/.5,0,1)); carZ=p0.z; stripVisible=true; sx=lerp(20,82,q); sz=lerp(0,toOk?-10:10,Math.min(1,q*1.4)); }
+      else { carX=p0.x; carZ=p0.z; stripVisible=true; sx=82; sz=toOk?-10:10; sy=lerp(STRIP_Y,86.6+(toOk?S.ok:S.ng)*.42,ease((p-.75)/.25)); }
+    }
+    else { // 扎针阶段
+      onCarrier=true; stripVisible=true;
+      if(seg.n==='STEP'){ const q=ease(p); carX=lerp(cur.prevPos.x,cur.nextPos.x,q); carZ=lerp(cur.prevPos.z,cur.nextPos.z,q); }
+      else { const c=tdCenter(cfg,cur.k); carX=c.x; carZ=c.z; }
+    }
+  } else { const p0=tdCenter(cfg,0); carX=p0.x; carZ=p0.z; }
+  carrier.position.x=carX; carrier.position.z=carZ;
+  stripMesh.visible=stripVisible;
+  if(stripVisible){ if(onCarrier){ stripMesh.position.set(carX,STRIP_Y,carZ); } else stripMesh.position.set(sx,sy,sz); }
+  cleanSheet.visible=!!S.clean;
+  // 对位环形光
+  M.ring.emissiveIntensity=(seg&&seg.n==='ALIGN')?.5+.5*Math.abs(Math.sin(p*Math.PI*6)):.1;
+  // 防护门
+  const doorT=S.maint?1:0; doorL.rotation.y+=((-doorT*1.9)-doorL.rotation.y)*Math.min(1,dt*3); doorR.rotation.y+=((doorT*1.9)-doorR.rotation.y)*Math.min(1,dt*3);
+  // 三色灯
+  const st=S.alarm?'alarm':(S.maint||S.clean||S.phase==='WAIT'||!S.running)?'wait':'run';
+  const bl=.55+.45*Math.sin(performance.now()/180);
+  M.lampG.emissiveIntensity=st==='run'?1:0; M.lampY.emissiveIntensity=st==='wait'?1:0; M.lampR.emissiveIntensity=st==='alarm'?bl:0;
+  // 料盒
+  fillStack(inStack,S.input,-82,0); fillStack(okStack,S.ok,82,-10); fillStack(ngStack,S.ng,82,10);
+  // EVA100 台数
+  eva2.visible=cfg.ch===512; eva1.position.x=cfg.ch===512?-36:0;
+  // 维护项高亮脉冲
+  if(maintHover&&PARTS[maintHover]){ const k=.25+.25*Math.sin(performance.now()/160); for(const m of PARTS[maintHover].meshes){ if(m.material.userData&&m.material.userData.base) m.material.emissiveIntensity=k; } }
+  if(stripTexDirty){ paintStripTexture(cur?cur.res:null); stripTexDirty=false; }
+  updateLabels();
+  renderer.render(scene,camera);
+}
+
+/* ---------------- 面板：节拍条 ---------------- */
+function buildTakt(){
+  const cfg=S.cfg, probe=cfg.N*TD, total=T.LOAD+T.ALIGN+T.TRANSFER+probe+T.UNLOAD;
+  $('taktTotal').textContent=total.toFixed(1)+' s'; $('taktUph').textContent=(3600/total).toFixed(0); $('taktN').textContent=cfg.N;
+  $('kUphT').textContent=(3600/total).toFixed(0);
+  const mb=$('macroBar'); mb.innerHTML='';
+  for(const [k,n,d,c] of MACRO){ const dd=k==='PROBE'?probe:d; const s=document.createElement('div'); s.className='sg'; s.dataset.k=k; s.style.flex=`${dd} 0 0`; s.style.background=`var(${c})`; s.innerHTML=`<span class="t">${n} ${dd.toFixed(1)} s</span>`; mb.appendChild(s); }
+  const ph=document.createElement('div'); ph.className='ph'; ph.id='macroPh'; mb.appendChild(ph);
+  const lg=$('taktLegend'); lg.innerHTML=MACRO.map(m=>`<span><i style="background:var(${m[3]})"></i>${m[1]}</span>`).join('');
+  const mi=$('microBar'); mi.innerHTML='';
+  for(const [k,n,d,c] of MICRO){ const s=document.createElement('div'); s.className='sg'; s.dataset.k=k; s.style.flex=`${d} 0 0`; s.style.background=`var(${c})`; s.innerHTML=`<span class="t">${n} ${d} s</span>`; mi.appendChild(s); }
+}
+function updateTakt(){
+  const seg=S.sched?S.sched[S.si]:null, cfg=S.cfg;
+  const probe=cfg.N*TD, total=T.LOAD+T.ALIGN+T.TRANSFER+probe+T.UNLOAD;
+  let el=0;
+  if(seg){ el=S.cur.start!=null?S.simTime-S.cur.start:0; }
+  const ph=$('macroPh'); if(ph) ph.style.left=(clamp(el/total,0,1)*100)+'%';
+  const mk=seg?(['STEP','DOWN','SETTLE','CONTACT','TEST','UP'].includes(seg.n)?'PROBE':seg.n):null;
+  document.querySelectorAll('#macroBar .sg').forEach(s=>s.classList.toggle('dim',!!mk&&s.dataset.k!==mk));
+  document.querySelectorAll('#microBar .sg').forEach(s=>s.classList.toggle('dim',!!seg&&mk==='PROBE'&&s.dataset.k!==seg.n));
+}
+
+/* ---------------- 面板：Map ---------------- */
+const mapSvg=$('map'); const mapCells=[]; let mapDirty=true, stripTexDirty=true, measDirty=true, histDirty=true, yieldDirty=true;
+(function(){
+  const ns='http://www.w3.org/2000/svg';
+  for(let i=0;i<UNITS;i++){ const c=Math.floor(i/ROWS), r=i%ROWS; const el=document.createElementNS(ns,'rect'); el.setAttribute('x',1+c*12); el.setAttribute('y',1+r*12); el.setAttribute('width',10); el.setAttribute('height',10); el.setAttribute('rx',1); el.dataset.i=i; el.setAttribute('fill','var(--surface-2)'); el.setAttribute('stroke','var(--line)'); el.setAttribute('stroke-width','.5'); mapSvg.appendChild(el); mapCells.push(el); }
+  const fr=document.createElementNS(ns,'rect'); fr.id='mapFrame'; fr.setAttribute('fill','none'); fr.setAttribute('stroke','var(--ink)'); fr.setAttribute('stroke-width','1.5'); fr.setAttribute('rx','2'); fr.hidden=true; mapSvg.appendChild(fr);
+})();
+const FILL=['var(--surface-2)','var(--accent)','var(--good)','var(--crit)'];
+function updateMap(){
+  const cur=S.cur;
+  for(let i=0;i<UNITS;i++){ const s=cur?cur.res[i]:0; mapCells[i].setAttribute('fill',FILL[s]); mapCells[i].setAttribute('stroke',s?'none':'var(--line)'); }
+  const fr=$('mapFrame');
+  if(cur&&cur.k>=0&&S.phase!=='UNLOAD'){ const u=tdUnits(S.cfg,cur.k); const c0=Math.floor(u[0]/ROWS), c1=Math.floor(u[u.length-1]/ROWS), r0=u[0]%ROWS, r1=u[u.length-1]%ROWS; fr.hidden=false; fr.setAttribute('x',c0*12); fr.setAttribute('y',r0*12); fr.setAttribute('width',(c1-c0+1)*12); fr.setAttribute('height',(r1-r0+1)*12); } else fr.hidden=true;
+}
+const tip=$('tip');
+function showTip(ev,html){ tip.innerHTML=html; tip.style.display='block'; const w=tip.offsetWidth; let x=ev.clientX+12; if(x+w>innerWidth-8) x=ev.clientX-w-12; tip.style.left=x+'px'; tip.style.top=(ev.clientY-30)+'px'; }
+function hideTip(){ tip.style.display='none'; }
+const BINN={1:'合格',2:'VF 失效',3:'IGSS 失效',4:'VS1S2 失效',5:'接触不良'};
+mapSvg.addEventListener('pointermove',ev=>{
+  const t=ev.target; if(!t.dataset||t.dataset.i==null||!S.cur){ hideTip(); return; }
+  const i=+t.dataset.i, cur=S.cur, s=cur.res[i], c=Math.floor(i/ROWS)+1, r=i%ROWS+1;
+  let h=`C${c} R${r} · `;
+  if(s===0) h+='待测'; else if(s===1) h+='测试中';
+  else { const b=cur.bin[i]; h+=BINN[b]; if(b!==5) h+=`<br><span class="m">VF ${cur.vals[i*3].toFixed(3)} V · IGSS ${cur.vals[i*3+1].toFixed(1)} nA · VS1S2 ${cur.vals[i*3+2].toFixed(2)} mV</span>`; }
+  showTip(ev,h);
+});
+mapSvg.addEventListener('pointerleave',hideTip);
+
+/* ---------------- 面板：良率趋势 ---------------- */
+const yc=$('yieldChart');
+function drawYield(){
+  const W=380,H=130,L=34,R=14,Tp=10,B=22, ys=S.yields; const ns='http://www.w3.org/2000/svg';
+  yc.innerHTML='';
+  const mk=(t,a)=>{ const e=document.createElementNS(ns,t); for(const k in a) e.setAttribute(k,a[k]); yc.appendChild(e); return e; };
+  const ymin=Math.min(90,...ys.map(y=>Math.floor(y.y))), ymax=100;
+  const yy=v=>Tp+(ymax-v)/(ymax-ymin)*(H-Tp-B);
+  for(const v of [ymin,(ymin+ymax)/2,ymax]){ mk('line',{x1:L,x2:W-R,y1:yy(v),y2:yy(v),stroke:'var(--grid)','stroke-width':1}); mk('text',{x:L-6,y:yy(v)+4,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-family':'var(--font-mono)'}).textContent=v.toFixed(0)+'%'; }
+  mk('line',{x1:L,x2:W-R,y1:yy(97),y2:yy(97),stroke:'var(--crit)','stroke-width':1});
+  mk('text',{x:W-R,y:yy(97)-3,'text-anchor':'end','font-size':10,fill:'var(--ink-2)'}).textContent='分选线 97%';
+  if(!ys.length){ mk('text',{x:W/2,y:H/2,'text-anchor':'middle','font-size':12,fill:'var(--muted)'}).textContent='完成第一条后显示'; return; }
+  const n=Math.max(ys.length,2), xx=i=>L+(W-L-R)*(ys.length===1?.5:i/(n-1));
+  const pts=ys.map((y,i)=>[xx(i),yy(y.y)]);
+  mk('path',{d:pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')+` L${pts[pts.length-1][0].toFixed(1)} ${yy(ymin)} L${pts[0][0].toFixed(1)} ${yy(ymin)} Z`,fill:'var(--s1)',opacity:.1});
+  mk('path',{d:pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' '),fill:'none',stroke:'var(--s1)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'});
+  const last=pts[pts.length-1];
+  mk('circle',{cx:last[0],cy:last[1],r:6,fill:'var(--surface)'}); mk('circle',{cx:last[0],cy:last[1],r:4,fill:'var(--s1)'});
+  mk('text',{x:last[0]-8,y:last[1]-8,'text-anchor':'end','font-size':11,fill:'var(--ink)','font-family':'var(--font-mono)'}).textContent=ys[ys.length-1].y.toFixed(2)+'%';
+  mk('text',{x:L,y:H-6,'font-size':10,fill:'var(--muted)'}).textContent=ys[0].id.slice(-4);
+  mk('text',{x:W-R,y:H-6,'text-anchor':'end','font-size':10,fill:'var(--muted)'}).textContent=ys[ys.length-1].id.slice(-4);
+  pts.forEach((p,i)=>{ const h=mk('rect',{x:p[0]-((W-L-R)/n/2),y:Tp,width:(W-L-R)/n,height:H-Tp-B,fill:'transparent'}); h.addEventListener('pointermove',ev=>showTip(ev,`${ys[i].id}<br><span class="m">良率 ${ys[i].y.toFixed(2)}%</span>`)); h.addEventListener('pointerleave',hideTip); });
+}
+
+/* ---------------- 面板：直方图 ---------------- */
+const hs=$('hist');
+function drawHist(){
+  const W=380,H=150,L=30,R=10,Tp=12,B=24, ns='http://www.w3.org/2000/svg'; hs.innerHTML='';
+  const mk=(t,a)=>{ const e=document.createElementNS(ns,t); for(const k in a) e.setAttribute(k,a[k]); hs.appendChild(e); return e; };
+  const n=40, max=Math.max(1,...S.hist), slot=(W-L-R)/n, bw=Math.min(24,slot-2);
+  const yy=v=>Tp+(1-v/max)*(H-Tp-B), xx=i=>L+i*slot;
+  for(const v of [0,max/2,max]){ mk('line',{x1:L,x2:W-R,y1:yy(v),y2:yy(v),stroke:'var(--grid)','stroke-width':1}); mk('text',{x:L-5,y:yy(v)+4,'text-anchor':'end','font-size':10,fill:'var(--muted)','font-family':'var(--font-mono)'}).textContent=v>=1000?(v/1000).toFixed(1)+'K':Math.round(v); }
+  S.hist.forEach((c,i)=>{ if(!c) return; const h=yy(0)-yy(c), x=xx(i)+(slot-bw)/2, y=yy(c), r=Math.min(4,h/2);
+    const d=`M${x} ${yy(0)} V${y+r} Q${x} ${y} ${x+r} ${y} H${x+bw-r} Q${x+bw} ${y} ${x+bw} ${y+r} V${yy(0)} Z`;
+    const inSpec=(i*.1+.05)>=.6&&(i*.1+.05)<=2.88; const b=mk('path',{d,fill:inSpec?'var(--s1)':'var(--seq-250)'});
+    b.addEventListener('pointermove',ev=>showTip(ev,`VS1S2 ${(i*.1).toFixed(1)}–${(i*.1+.1).toFixed(1)} mV<br><span class="m">${c} 单元</span>`)); b.addEventListener('pointerleave',hideTip); });
+  for(const [v,t] of [[0.6,'LSL 0.6'],[2.88,'USL 2.88']]){ const x=L+v/4*(W-L-R); mk('line',{x1:x,x2:x,y1:Tp,y2:yy(0),stroke:'var(--crit)','stroke-width':1}); mk('text',{x:x+3,y:Tp+8,'font-size':10,fill:'var(--ink-2)'}).textContent=t; }
+  for(const v of [0,1,2,3,4]){ const x=L+v/4*(W-L-R); mk('text',{x,y:H-8,'text-anchor':'middle','font-size':10,fill:'var(--muted)','font-family':'var(--font-mono)'}).textContent=v.toFixed(1); }
+  mk('text',{x:W-R,y:H-8,'text-anchor':'end','font-size':10,fill:'var(--muted)'}).textContent='mV';
+  if(!S.hist.some(v=>v)) mk('text',{x:W/2,y:H/2,'text-anchor':'middle','font-size':12,fill:'var(--muted)'}).textContent='开始测试后累计';
+}
+
+/* ---------------- 面板：实时测量表 ---------------- */
+function updateMeas(){
+  const tb=$('measTbl').tBodies[0]; const rows=[];
+  if(!S.lastMeas.length){ tb.innerHTML='<tr><td colspan="5" class="hint">等待扎针…</td></tr>'; return; }
+  for(const m of S.lastMeas){ const c=Math.floor(m.i/ROWS)+1, r=m.i%ROWS+1;
+    if(m.pending){ rows.push(`<tr><td class="mono">C${c} R${r}</td><td class="num mono">…</td><td class="num mono">…</td><td class="num mono">…</td><td><span class="chip test"><i></i>测量中</span></td></tr>`); continue; }
+    const cls=m.bin===1?'pass':'fail', f=(v,d)=>Number.isFinite(v)?v.toFixed(d):'—';
+    rows.push(`<tr><td class="mono">C${c} R${r}</td><td class="num mono">${f(m.vf,3)}</td><td class="num mono">${f(m.ig,1)}</td><td class="num mono">${f(m.vs,2)}</td><td><span class="chip ${cls}"><i></i>${m.bin} ${BINN[m.bin]}</span></td></tr>`); }
+  tb.innerHTML=rows.join('');
+}
+
+/* ---------------- 面板：物料流 ---------------- */
+const FLOW=[['loader','上料盒','升降 + 推片，25 条/盒',()=>S.input,['LOAD']],['reader','读码 · 对位','Top 面 Mark，±17 µm 预算',()=>S.phase==='ALIGN'?1:0,['ALIGN']],['carrier','转载 · 载具','格栅窗口真空吸附',()=>S.phase==='TRANSFER'?1:0,['TRANSFER']],['station','测试工位','双面同时扎针，1.2 s/次',()=>S.cur&&!['LOAD','ALIGN','TRANSFER','UNLOAD'].includes(S.phase)?1:0,['STEP','DOWN','SETTLE','CONTACT','TEST','UP']],['unloader','下料分选','良率 ≥ 97% → OK 盒',()=>S.phase==='UNLOAD'?1:0,['UNLOAD']],['out','OK / NG 料盒','Map 上传 CIM V5.0',()=>`${S.ok} / ${S.ng}`,[]]];
+function buildFlow(){ const f=$('flow'); f.innerHTML=''; FLOW.forEach((r,i)=>{ if(i){ const a=document.createElement('div'); a.className='arrow'; a.textContent='↓'; f.appendChild(a);} const d=document.createElement('div'); d.className='flowrow'; d.id='fl-'+r[0]; d.innerHTML=`<div><div class="n">${r[1]}</div><div class="d">${r[2]}</div></div><div class="c mono"></div>`; f.appendChild(d); }); }
+function updateFlow(){ FLOW.forEach(r=>{ const d=$('fl-'+r[0]); d.classList.toggle('on',r[4].includes(S.phase)); d.querySelector('.c').textContent=r[3](); }); }
+
+/* ---------------- 面板：维护 ---------------- */
+let maintHover=null;
+function buildMaint(){
+  const l=$('mlist'); l.innerHTML='';
+  for(const it of S.maintItems){
+    const d=document.createElement('div'); d.className='mitem'; d.dataset.id=it.id;
+    d.innerHTML=`<div><div class="n">${it.name}</div><div class="d">${it.desc}</div></div><div style="text-align:right"><div class="mono rem"></div><button data-act="${it.id}" style="margin-top:4px;font-size:12px">${it.act}</button></div><div class="meter"><i></i></div>`;
+    d.addEventListener('pointerenter',()=>{ maintHover=it.part; setHighlight(it.part,true); showInfo(it.part); });
+    d.addEventListener('pointerleave',()=>{ if(maintHover) setHighlight(maintHover,false); maintHover=null; if(!pinned) showInfo(null); });
+    l.appendChild(d);
+  }
+  l.addEventListener('click',ev=>{ const b=ev.target.closest('button[data-act]'); if(!b) return; const it=S.maintItems.find(x=>x.id===b.dataset.act);
+    if(it.id==='cln'){ if(!S.maint){ log('针尖清洁需先进入维护模式','w'); return; } S.clean={t:0,dur:6}; log('开始针尖清洁：上清洁片，双面各扎 3 次'); it.used=0; return; }
+    if(!S.maint&&(it.id==='top'||it.id==='bot')){ log(`${it.act} 需先进入维护模式`,'w'); return; }
+    it.used=0; log(`${it.name}：${it.act}，寿命计数清零`,'ok'); });
+}
+function updateMaint(){
+  for(const it of S.maintItems){ const d=document.querySelector(`.mitem[data-id="${it.id}"]`); if(!d) continue; const rem=Math.max(0,it.life-it.used), fr=rem/it.life;
+    d.querySelector('.rem').innerHTML=rem<=0?`<span class="due">到期</span>`:`剩余 ${it.unit==='h'?fmt(rem,0)+' h':fmt(rem)} <span class="hint">/ ${fmt(it.life)} ${it.unit}</span>`;
+    const m=d.querySelector('.meter'); m.className='meter'+(fr<.1?' crit':fr<.3?' warn':''); m.firstChild.style.width=(clamp(1-fr,0,1)*100)+'%';
+    if(rem<=0&&!it.warned){ it.warned=true; log(`${it.name} 到期，请安排保养`,'w'); } if(rem>0) it.warned=false; }
+}
+
+/* ---------------- 面板：汇总刷新 ---------------- */
+let uiAcc=0;
+function updateUI(dt){
+  uiAcc+=dt; if(uiAcc<.1) return; uiAcc=0;
+  const seg=S.sched?S.sched[S.si]:null, cur=S.cur;
+  const phaseKey=S.alarm?'ALARM':S.clean?'CLEAN':S.maint?'MAINT':S.phase;
+  const ptxt=PHASE_CN[phaseKey]||phaseKey;
+  const detail=seg&&cur&&cur.k>=0&&['STEP','DOWN','SETTLE','CONTACT','TEST','UP'].includes(seg.n)?` · 第 ${cur.k+1}/${S.cfg.N} 次`:'';
+  $('phasebox').innerHTML=`工序 <b>${ptxt}</b>${detail}${cur?` · <span class="mono">${cur.id}</span>`:''}${cur&&cur.align&&seg&&seg.n==='TRANSFER'?` · 对位偏差 <span class="mono">${cur.align.dx}/${cur.align.dy} µm, ${cur.align.th}°</span>`:''}`;
+  $('clock').textContent='演示时间 '+hms(S.simTime);
+  const tw=$('tower'); const st=S.alarm?'alarm':(S.maint||S.clean||S.phase==='WAIT'||!S.running)?'wait':'run'; tw.className='tower '+st;
+  $('towerTxt').textContent=S.alarm?'报警 '+S.alarm.code:S.clean?'清洁中':S.maint?'维护模式':S.phase==='WAIT'?'待料':S.running?'运行中':'待机';
+  // 运行页
+  const uph=S.cycles.length?3600/(S.cycles.reduce((a,b)=>a+b,0)/S.cycles.length):NaN;
+  $('kUph').textContent=Number.isFinite(uph)?uph.toFixed(0):'—';
+  $('kStrips').textContent=fmt(S.strips); $('kUnits').textContent=fmt(S.units);
+  $('kYield').innerHTML=(S.units?(S.pass/S.units*100).toFixed(2):'—')+'<span class="u">%</span>';
+  $('cId').textContent=cur?cur.id:'—'; $('cPhase').textContent=ptxt;
+  $('cTd').textContent=cur?`${cur.tdDone} / ${S.cfg.N}`:`0 / ${S.cfg.N}`; $('cProg').style.width=(cur?cur.tdDone/S.cfg.N*100:0)+'%';
+  if(cur){ let p=0,d=0; for(let i=0;i<UNITS;i++){ if(cur.res[i]>=2) d++; if(cur.res[i]===2) p++; } $('cYield').textContent=d?`${(p/d*100).toFixed(2)}%（已测 ${d}）`:'—'; } else $('cYield').textContent='—';
+  if(mapDirty){ updateMap(); mapDirty=false; }
+  if(yieldDirty){ drawYield(); yieldDirty=false; }
+  // 物料页
+  if(S.tab==='mat'){ updateFlow(); $('mIn').textContent=S.input; $('mInBar').style.width=(S.input/25*100)+'%'; $('mOk').textContent=S.ok; $('mNg').textContent=S.ng;
+    $('lotProg').textContent=`${S.planned} / ${S.strips}`; const total=T.LOAD+T.ALIGN+T.TRANSFER+S.cfg.N*TD+T.UNLOAD; const left=Math.max(0,S.planned-S.strips); $('lotEta').textContent=left?hms(left*total):'已完成'; }
+  // 测试页
+  if(S.tab==='test'){ const k=cur&&cur.k>=0?cur.k:null; $('tTd').textContent=k!=null?`第 ${k+1} / ${S.cfg.N} 次`:'—'; $('tCover').textContent=k!=null?`${S.cfg.cover(k)} · ${S.cfg.perTd} 单元`:'—';
+    $('tCh').textContent=k!=null?`${S.cfg.perTd*8} / ${S.cfg.ch}（每单元 8 ch）`:`— / ${S.cfg.ch}`; $('tSense').textContent=k!=null?`${S.cfg.perTd*4} 路 → INA ×100 → 3:1 复用 → DGT`:'—';
+    if(measDirty){ updateMeas(); measDirty=false; } if(histDirty){ drawHist(); histDirty=false; } }
+  if(S.tab==='maint') updateMaint();
+  updateTakt();
+}
+
+/* ---------------- 交互 ---------------- */
+function setRunning(on){ S.running=on; $('btnRun').textContent=on?'❙❙ 暂停':'▶ 开始'; $('btnRun').classList.toggle('primary',!on); log(on?'设备启动，自动运行':'暂停：当前工序停止，EVA100 保持待命'); }
+$('btnRun').addEventListener('click',()=>{ if(S.alarm){ log('存在未复位报警，无法启动','e'); return; } if(S.maint){ log('维护模式中，先退出维护模式','w'); return; } setRunning(!S.running); });
+$('btnReset').addEventListener('click',()=>{ S.running=false; S.sched=null; S.cur=null; S.phase='IDLE'; S.alarm=null; S.maint=false; S.maintPending=false; S.clean=null; S.simTime=0; S.seq=0; S.input=25; S.ok=0; S.ng=0; S.strips=0; S.units=0; S.pass=0; S.fail=0; S.cycles=[]; S.yields=[]; S.hist.fill(0); S.lastMeas=[];
+  mapDirty=stripTexDirty=measDirty=histDirty=yieldDirty=true; $('btnRun').textContent='▶ 开始'; $('btnRun').classList.add('primary'); $('btnMaint').textContent='进入维护模式'; $('btnAck').disabled=true; logEl.innerHTML=''; log('整机复位：回原点，计数清零'); });
+$('speed').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.speed=+b.dataset.s; document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('on',x===b)); });
+$('cfg').addEventListener('change',ev=>{ S.cfg=CONFIGS[+ev.target.value]; if(S.cur){ log(`配置切换到 ${S.cfg.name}，当前条带作废重测`,'w'); S.sched=null; S.cur=null; S.phase='IDLE'; S.input++; mapDirty=stripTexDirty=true; } else log(`配置切换到 ${S.cfg.name}`); buildTakt(); });
+$('views').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(b) setView(b.dataset.v); });
+$('btnExplode').addEventListener('click',()=>{ S.explode=!S.explode; $('btnExplode').classList.toggle('on',S.explode); if(S.explode&&S.view!=='section') setView('section'); });
+document.querySelector('.tabs').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.tab=b.dataset.t; document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); for(const t of ['run','mat','test','maint']) $('tab-'+t).hidden=t!==S.tab;
+  measDirty=histDirty=true; const vmap={run:'overview',mat:'material',test:'section',maint:'station'}; setView(vmap[S.tab]); if(S.tab!=='test'&&S.explode){ S.explode=false; $('btnExplode').classList.remove('on'); } uiAcc=1; });
+$('btnRefill').addEventListener('click',()=>{ S.input=Math.min(40,S.input+25); S.planned+=25; if(S.phase==='WAIT') S.phase='IDLE'; log('上料盒补料 +25 条','ok'); });
+$('btnEmptyOut').addEventListener('click',()=>{ log(`下料盒清空：OK ${S.ok} 条、NG ${S.ng} 条转入下道工序`); S.ok=0; S.ng=0; });
+function enterMaint(){ S.maint=true; S.maintPending=false; S.running=false; $('btnRun').textContent='▶ 开始'; $('btnRun').classList.add('primary'); $('btnMaint').textContent='退出维护模式'; log('进入维护模式：针头退到维护位，防护门解锁，Z 轴使能断开','w'); setView('station'); }
+$('btnMaint').addEventListener('click',()=>{
+  if(S.maint){ S.maint=false; S.clean=null; $('btnMaint').textContent='进入维护模式'; log('退出维护模式：门已关闭并联锁，回原点完成','ok'); return; }
+  if(S.cur&&S.running){ S.maintPending=true; log('已请求维护模式：当前条带测完后停机'); $('btnMaint').textContent='等待当前条带完成…'; } else enterMaint();
+});
+$('btnAlarm').addEventListener('click',()=>{ if(S.alarm) return; S.alarm={code:'E-213',text:'接触不良率超限（Bin 5 > 0.5%），自动停机'}; $('btnAck').disabled=false; log(`报警 ${S.alarm.code}：${S.alarm.text}`,'e'); });
+$('btnAck').addEventListener('click',()=>{ if(!S.alarm) return; log(`报警 ${S.alarm.code} 已复位，针头回原点，可重新启动`,'ok'); S.alarm=null; $('btnAck').disabled=true; });
+
+/* ---------------- 热更新快照 ---------------- */
+function start(saved){
+  if(saved&&saved.cfg&&CONFIGS[saved.cfg]){ S.cfg=CONFIGS[saved.cfg]; $('cfg').value=saved.cfg; }
+  if(saved&&saved.speed){ S.speed=saved.speed; document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('on',+x.dataset.s===S.speed)); }
+  buildTakt(); buildFlow(); buildMaint(); drawYield(); drawHist(); updateMap(); updateMaint(); updateFlow();
+  log('演示就绪：选择 EVA100 配置后点击「开始」');
+  window.claude?.hot?.snapshot?.(()=>({cfg:S.cfg.ch, speed:S.speed}));
+  let last=performance.now();
+  (function loop(now){
+    const dt=Math.min(.1,(now-last)/1000); last=now;
+    advance(dt*S.speed); anim(dt); updateUI(dt);
+    requestAnimationFrame(loop);
+  })(last);
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
