@@ -98,7 +98,7 @@ select{font:inherit;color:inherit;background:var(--surface);border:1px solid var
 .takt .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .takt .ttl{font-size:12px;color:var(--ink-2);min-width:0}
 .takt .ttl b{color:var(--ink);font-weight:500}
-.lanes{position:relative;display:grid;grid-template-columns:52px 1fr;gap:3px 8px;align-items:center}
+.lanes{position:relative;display:grid;grid-template-columns:64px 1fr;gap:3px 8px;align-items:center}
 .lanes .ln{font-size:11px;color:var(--ink-2);text-align:right}
 .bar{position:relative;height:16px;display:flex;border-radius:3px;overflow:hidden;background:var(--surface-2)}
 .bar .sg{height:100%;min-width:0;display:flex;align-items:center;font-size:10px;color:#fff;overflow:hidden;white-space:nowrap;padding:0 4px;border-right:2px solid var(--surface)}
@@ -107,7 +107,6 @@ select{font:inherit;color:inherit;background:var(--surface);border:1px solid var
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-2)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
 .microbar{height:18px}
-.microbar .sg{font-size:10px}
 
 .panel{width:420px;flex:none;display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
@@ -170,7 +169,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .checks label{display:flex;gap:8px;align-items:center}
 .tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:4px 8px;border-radius:3px;white-space:nowrap;display:none}
 .tip .m{font-family:var(--font-mono)}
-.toggle{display:flex;align-items:center;gap:8px;font-size:13px}
 
 @media (max-width:980px){
   .app{height:auto;min-height:100%}
@@ -189,7 +187,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <div class="eyebrow">ECP 嵌埋芯片基板 · 30×24 双 MOSFET 条带 · 测试源 Advantest EVA100 · 对标 Nidec STAR REC M6 系列形态</div>
+      <div class="eyebrow">ECP 嵌埋芯片基板 · 30×24 双 MOSFET 条带 · 测试源 Advantest EVA100 · 针卡方案</div>
       <h1>双面同时扎针测试机 ECP-DS · 现场演示</h1>
     </div>
     <div class="ctl">
@@ -219,10 +217,10 @@ td.num,th.num{text-align:right;white-space:nowrap}
         <canvas id="c3d" aria-label="测试机三维模型"></canvas>
         <div class="views" id="views">
           <button data-v="overview" class="on">整机外观</button>
-          <button data-v="table">分度转台</button>
+          <button data-v="inside">内部布局</button>
           <button data-v="station">测试工位</button>
-          <button data-v="top">上针头</button>
-          <button data-v="bottom">下针头</button>
+          <button data-v="topcard">上针卡</button>
+          <button data-v="botcard">下针卡</button>
           <button data-v="lul">上下料</button>
           <button data-v="section">剖视·分层</button>
         </div>
@@ -232,12 +230,12 @@ td.num,th.num{text-align:right;white-space:nowrap}
         </div>
         <div class="labels" id="labels"></div>
         <div class="ptip" id="ptip" hidden></div>
-        <div class="phasebox" id="phasebox"><div>周期 <b>待机</b></div></div>
+        <div class="phasebox" id="phasebox"><div>工序 <b>待机</b></div></div>
       </div>
       <div class="partinfo" id="partinfo"><b>部件说明</b><span>把鼠标移到 3D 部件上查看功能；点击可固定。拖动旋转，滚轮缩放，右键平移。</span></div>
       <div class="takt" id="takt">
         <div class="row">
-          <div class="ttl">分度周期 <b id="taktTotal" class="mono">—</b> · 理论 <b id="taktUph" class="mono">—</b> 条/h · 测试工位 <b id="taktN" class="mono">—</b> 次扎针 × 1.2 s + 转位 1.5 s</div>
+          <div class="ttl">单条周期 <b id="taktTotal" class="mono">—</b> · 理论 <b id="taktUph" class="mono">—</b> 条/h · <b id="taktN" class="mono">—</b> 次扎针 × 1.2 s + 换片/对位 8 s</div>
           <div class="legend" id="taktLegend"></div>
         </div>
         <div class="lanes" id="lanes"></div>
@@ -258,18 +256,18 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <div class="pbody" id="tab-run">
         <div class="sec">
           <div class="kpis">
-            <div class="kpi hero"><div><div class="l">实时产能（近 5 个周期）</div><div class="v mono" id="kUph">—</div></div><div class="sub">条/小时 · 理论 <span class="mono" id="kUphT">—</span></div></div>
+            <div class="kpi hero"><div><div class="l">实时产能（近 5 条）</div><div class="v mono" id="kUph">—</div></div><div class="sub">条/小时 · 理论 <span class="mono" id="kUphT">—</span></div></div>
             <div class="kpi"><div class="l">已测条带</div><div class="v mono" id="kStrips">0</div></div>
             <div class="kpi"><div class="l">已测单元</div><div class="v mono" id="kUnits">0</div></div>
             <div class="kpi"><div class="l">单元良率</div><div class="v mono" id="kYield">—<span class="u">%</span></div></div>
           </div>
         </div>
         <div class="sec">
-          <h3>分度转台 · 四工位并行</h3>
+          <h3>工位状态</h3>
           <div class="stations" id="stations"></div>
         </div>
         <div class="sec">
-          <h3>测试工位条带 Map · 30 列 × 24 行 = 720 单元</h3>
+          <h3>载具上条带 Map · 30 列 × 24 行 = 720 单元</h3>
           <div class="kv" style="margin-bottom:6px"><dt>条带 ID</dt><dd class="mono" id="cId">—</dd><dt>扎针进度</dt><dd><span class="mono" id="cTd">0 / 0</span></dd><dt>本条良率</dt><dd class="mono" id="cYield">—</dd></div>
           <svg class="map" id="map" viewBox="0 0 362 290" role="img" aria-label="条带单元测试结果图"></svg>
           <div class="legend" style="margin-top:6px">
@@ -314,12 +312,12 @@ td.num,th.num{text-align:right;white-space:nowrap}
             <dt>计划 / 完成</dt><dd class="mono" id="lotProg">25 / 0</dd>
             <dt>预计剩余</dt><dd class="mono" id="lotEta">—</dd>
             <dt>条带规格</dt><dd>142 × 66 × 0.28 mm，6 层，720 单元</dd>
-            <dt>工件保持</dt><dd>格栅窗口真空吸附 + 边缘张力夹，窗口露出 Bottom 焊盘</dd>
-            <dt>读码</dt><dd>上料搬运途中全幅读 2D 码，条带 ID 绑定 Map</dd>
+            <dt>工件保持</dt><dd>格栅窗口真空载具 + 边缘张力夹 + 上压板，窗口露出 Bottom 焊盘</dd>
+            <dt>读码</dt><dd>上料搬运途中读 2D 码，条带 ID 绑定 Map</dd>
             <dt>分选规则</dt><dd>单元良率 ≥ 97% 入 OK 盒，否则入 NG 盒；Map 上传 CIM V5.0</dd>
           </dl>
         </div>
-        <div class="note">四工位分度转台让上料、对位、测试、下料并行，周期由测试工位决定：N 次扎针 × 1.2 s + 转位 1.5 s。单机串行方案（方案文档 ver1）的 109 条/h 在此结构下提升到约 185 条/h。</div>
+        <div class="note">单载具直线结构：载具在换片位换片后进入针卡下方，对位、Step &amp; Repeat 扎针，再回换片位。下料取放把上一条送入料盒的动作与下一条的测试并行。周期 = 换片 4 s + 进出 2 s + 对位 2 s + N × 1.2 s。</div>
       </div>
 
       <div class="pbody" id="tab-test" hidden>
@@ -333,11 +331,11 @@ td.num,th.num{text-align:right;white-space:nowrap}
           </dl>
         </div>
         <div class="sec">
-          <h3>测量链路</h3>
+          <h3>测量链路（针卡）</h3>
           <dl class="kv">
-            <dt>Force</dt><dd>下针头 Pogo 针 → Bottom 0.35 mm 焊盘，EVA100 PPMU 施加电流</dd>
-            <dt>Sense / Gate</dt><dd>上针头钨丝针 → Top 0.12×0.15 mm 焊盘，Kelvin 取电压</dd>
-            <dt>VS1S2 读数</dt><dd>INA 前端 ×100 → 3:1 复用 → DGT 18 bit（12.5 µV）</dd>
+            <dt>上针卡</dt><dd>PCB 针卡，细针接触 Top 0.12×0.15 mm 焊盘；Sense + Gate；EVA100 测试头直接对接针卡（Pogo tower），无长电缆</dd>
+            <dt>下针卡</dt><dd>Pogo 针卡，经载具窗口接触 Bottom 0.35 mm 焊盘；Force 电流</dd>
+            <dt>VS1S2 读数</dt><dd>针卡上 INA 前端 ×100 → 3:1 复用 → DGT 18 bit（12.5 µV）</dd>
             <dt>防护</dt><dd>电流反向法消热电势；栅极电荷爬坡做接触检查；ESD 时序</dd>
           </dl>
         </div>
@@ -373,7 +371,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
             <button id="btnAlarm" class="danger">触发示例报警</button>
             <button id="btnAck" disabled>报警复位</button>
           </div>
-          <div class="hint" style="margin-top:6px">维护模式：转台走完当前周期后停机，针头退到维护位，防护门解锁打开并联锁。</div>
+          <div class="hint" style="margin-top:6px">维护模式：当前条带测完后停机，针卡退到维护位，防护门解锁打开并联锁。</div>
         </div>
         <div class="sec">
           <h3>保养项目与寿命</h3>
@@ -382,10 +380,10 @@ td.num,th.num{text-align:right;white-space:nowrap}
         <div class="sec">
           <h3>每班点检</h3>
           <div class="checks">
-            <label><input type="checkbox" id="ck1"> 针尖目检（显微镜，上针头无弯针、下针头无卡滞）</label>
-            <label><input type="checkbox" id="ck2"> 真空压力 ≤ −80 kPa，四个载具吸附无漏气</label>
+            <label><input type="checkbox" id="ck1"> 针卡针尖目检（上卡无弯针、下卡 Pogo 无卡滞），针痕位置核对</label>
+            <label><input type="checkbox" id="ck2"> 真空压力 ≤ −80 kPa，载具吸附无漏气</label>
             <label><input type="checkbox" id="ck3"> 对位相机标片复核，偏差 ≤ ±10 µm</label>
-            <label><input type="checkbox" id="ck4"> 转台分度重复精度 ≤ ±5 µm（标片）</label>
+            <label><input type="checkbox" id="ck4"> 上下针卡同轴复核 ≤ ±20 µm（标片）</label>
             <label><input type="checkbox" id="ck5"> EVA100 自检通过，PPMU 校准在有效期内</label>
             <label><input type="checkbox" id="ck6"> 接触不良率（Bin 5）前一班 ≤ 0.5%</label>
           </div>
@@ -395,20 +393,20 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <div class="pbody" id="tab-cmp" hidden>
         <div class="sec">
           <h3>与 Nidec STAR REC M6ⅡUW 对标</h3>
-          <div class="note" style="margin-bottom:8px">M6 系列做的是 HDI/PCB 线路的 Open / Short / Leak 电测；本机测的是嵌埋 MOSFET 的器件参数（mV 级 Kelvin 测量）。形态和自动化对标它，测量部分完全不同。</div>
+          <div class="note" style="margin-bottom:8px">M6 做 HDI/PCB 线路 Open / Short / Leak 电测，靠上万针的专用针座治具一次压全板；本机测嵌埋 MOSFET 的器件参数，用针卡 Step &amp; Repeat。形态和自动化水平对标它，接触方案和测量完全不同，成本是本机的优势。</div>
           <table class="cmp">
             <thead><tr><th>项目</th><th>STAR REC M6ⅡUW</th><th>ECP-DS（本机）</th></tr></thead>
             <tbody>
               <tr><td>用途</td><td>HDI / 车载 PCB 线路 O/S/Leak 检查</td><td class="me">嵌埋双 MOSFET 基板条带：VF、IGSS、VS1S2 器件参数</td></tr>
-              <tr><td>检查方式</td><td>Step &amp; Repeat，4 端子，上下同时接触</td><td class="me">Step &amp; Repeat，Kelvin 四线，上下同时扎针（Force 在下 / Sense + Gate 在上）</td></tr>
-              <tr><td>测试电子</td><td>内置 O/S 测试板，Top/Bottom 16K 标配，32K 最大</td><td class="me">Advantest EVA100 PPMU / DPS / DGT，128–512 ch；每单元 8 ch + 4 Sense</td></tr>
-              <tr><td>节拍</td><td>7.0 s / 4 面板（检查 0.5 s/pcs）</td><td class="me">512ch：15 次 × 1.2 s + 转位 1.5 s = 19.5 s/条 ≈ 185 条/h</td></tr>
+              <tr><td>接触方案</td><td>专用针座治具，Top/Bottom 16K 标配、32K 最大，一次压整板</td><td class="me">上下两张针卡，上卡约 384 针、下卡约 480 Pogo（512ch），Step &amp; Repeat 15 次走完一条</td></tr>
+              <tr><td>治具成本</td><td>专用治具 ≈ 5× 通用治具；每个新品一套针座</td><td class="me">针卡为标准 PCB + 针，成本远低于全板针座；换新品只换针卡，EVA100 通道复用</td></tr>
+              <tr><td>最小节距</td><td>通用 300 µm / 专用 75 µm</td><td class="me">Top 焊盘 0.12×0.15 mm、节距 0.22 mm（细针卡）；Bottom 0.35 mm（Pogo）</td></tr>
+              <tr><td>测试电子</td><td>内置 O/S 测试板</td><td class="me">Advantest EVA100 PPMU / DPS / DGT，128–512 ch；测试头直接对接针卡</td></tr>
+              <tr><td>节拍</td><td>7.0 s / 4 面板（检查 0.5 s/pcs）</td><td class="me">512ch：15 × 1.2 s + 8 s = 26 s/条 ≈ 138 条/h（256ch ≈ 82，128ch ≈ 45）</td></tr>
               <tr><td>总合对位精度</td><td>±7.5 µm（M6V：±3.5 µm）</td><td class="me">Top 目标 ±25 µm（预算 ±17 µm，允差 ±35 µm）；Bottom 允差 ±100 µm</td></tr>
-              <tr><td>工件尺寸 / 厚度</td><td>60–300 × 50–250 mm，0.3–2.0 mm</td><td class="me">142 × 66 mm，0.28 mm —— 薄于 M6 下限，靠格栅真空 + 张力夹 + 上压板</td></tr>
-              <tr><td>工件保持</td><td>Multi holding + Tension clamp</td><td class="me">格栅窗口真空载具 + 边缘张力夹，窗口露出 Bottom 焊盘</td></tr>
-              <tr><td>治具</td><td>通用治具 300 µm / 专用治具 75 µm，One-touch</td><td class="me">专用细针头：Top 焊盘 0.12×0.15 mm、节距 0.22 mm 钨丝针；Bottom 0.35 mm Pogo；一键快换</td></tr>
-              <tr><td>机构</td><td>旋转分度转台：投入 / 对位 / 检查 / 排出</td><td class="me">同样 4 工位分度转台；上下针头共用 C 型框架在测试工位 XY 步进</td></tr>
-              <tr><td>上下料</td><td>L/UL 一体型，Free roller stocker</td><td class="me">L/UL 一体型料盒，取放机构，OK / NG 分选</td></tr>
+              <tr><td>工件</td><td>60–300 × 50–250 mm，0.3–2.0 mm</td><td class="me">142 × 66 mm，0.28 mm —— 薄于 M6 下限，靠格栅真空 + 张力夹 + 上压板</td></tr>
+              <tr><td>机构</td><td>旋转分度转台 4 工位</td><td class="me">单载具直线结构：换片位 ↔ 针卡下方 XYθ 步进；上下针卡共用 C 型框架，大板不转台，结构简单</td></tr>
+              <tr><td>上下料</td><td>L/UL 一体型，Free roller stocker</td><td class="me">L/UL 一体型料盒，上/下料两套 X/Z 取放，OK / NG 分选</td></tr>
               <tr><td>2D 码</td><td>全幅读码（选配）</td><td class="me">标配，条带 ID 绑定单元 Map，上传 CIM V5.0</td></tr>
               <tr><td>埋入 IC</td><td>选配</td><td class="me">核心功能：ESD 时序、热电势消除、接触检查</td></tr>
               <tr><td>AGV</td><td>选配</td><td class="me">预留对接口</td></tr>
@@ -445,15 +443,14 @@ const CONFIGS={
   256:{ch:256, name:'256ch', perTd:24, N:30, cover:k=>`第 ${k+1} 列 × 24 行`},
   128:{ch:128, name:'128ch', perTd:12, N:60, cover:k=>`第 ${Math.floor(k/2)+1} 列 · 第 ${k%2?13:1}–${k%2?24:12} 行`}
 };
-const T={LOAD:3, ALIGN:2, UNLOAD:3, INDEX:1.5, STEP:.1, DOWN:.15, SETTLE:.1, CONTACT:.1, TEST:.6, UP:.15};
-const TD=1.2;
+const T={EXCH:4, MOVE:1, ALIGN:2, STEP:.1, DOWN:.15, SETTLE:.1, CONTACT:.1, TEST:.6, UP:.15};
+const TD=1.2, OVERHEAD=T.EXCH+T.MOVE+T.ALIGN+T.MOVE; // 8 s
 const MICRO=[['STEP','步进',T.STEP,'--seq-250'],['DOWN','合针',T.DOWN,'--seq-350'],['SETTLE','稳定',T.SETTLE,'--seq-450'],['CONTACT','接触检查',T.CONTACT,'--seq-550'],['TEST','测试',T.TEST,'--seq-650'],['UP','抬起',T.UP,'--seq-350']];
 const MICRO_T=[0,.1,.25,.35,.45,1.05,1.2];
-const STN=[{k:'load',n:'投入',d:T.LOAD,c:'--s1'},{k:'align',n:'对位',d:T.ALIGN,c:'--s2'},{k:'test',n:'测试',d:0,c:'--s4'},{k:'unload',n:'排出',d:T.UNLOAD,c:'--s5'}];
-const STPOS=[[-42,0],[0,-42],[42,0],[0,42]]; // 转台局部坐标：投入(左) 对位(后) 测试(右) 排出(前)
-const TABLE_C={x:20,z:0};
-const PHASE_CN={IDLE:'待机',WORK:'四工位并行作业',INDEX:'转台分度 −90°',WAIT:'待料 · 上料盒空',MAINT:'维护模式',ALARM:'报警停机',CLEAN:'针尖清洁',SWAP:'一键换针头'};
-const MICRO_CN={STEP:'针头 XY 步进',DOWN:'上下针头合针',SETTLE:'接触稳定',CONTACT:'接触检查（栅极电荷爬坡）',TEST:'测试 VF / IGSS / VS1S2',UP:'针头抬起'};
+// 周期分段（单载具）：换片 → 进 → 对位 → 扎针 → 出
+const SEGS=cfg=>[{k:'EXCH',n:'换片',d:T.EXCH,c:'--s1'},{k:'IN',n:'进',d:T.MOVE,c:'--s3'},{k:'ALIGN',n:'对位',d:T.ALIGN,c:'--s2'},{k:'PROBE',n:'扎针测试',d:cfg.N*TD,c:'--s4'},{k:'OUT',n:'出',d:T.MOVE,c:'--s3'}];
+const PHASE_CN={IDLE:'待机',EXCH:'换片位 · 下料取片 / 上料放片',IN:'载具进入针卡下方',ALIGN:'Top 面光学对位（XYθ 补偿）',PROBE:'Step & Repeat 扎针',OUT:'载具回换片位',WAIT:'待料 · 上料盒空',MAINT:'维护模式',ALARM:'报警停机',CLEAN:'针尖清洁',SWAP:'更换针卡'};
+const MICRO_CN={STEP:'载具 XY 步进',DOWN:'上下针卡合针',SETTLE:'接触稳定',CONTACT:'接触检查（栅极电荷爬坡）',TEST:'测试 VF / IGSS / VS1S2',UP:'针卡抬起'};
 
 function tdUnits(cfg,k){
   const u=[];
@@ -462,7 +459,7 @@ function tdUnits(cfg,k){
   else { const c=Math.floor(k/2), r0=(k%2)*12; for(let r=r0;r<r0+12;r++) u.push(c*ROWS+r); }
   return u;
 }
-function tdCenter(cfg,k){ // 被测区域中心（条带局部坐标）
+function tdCenter(cfg,k){
   let cx,cz=0;
   if(cfg.ch===512) cx=-7.1+PX*(2*k+1);
   else if(cfg.ch===256) cx=-7.1+PX*(k+.5);
@@ -474,24 +471,24 @@ function microAt(t){ const m=((t%TD)+TD)%TD; for(let i=0;i<6;i++) if(m<MICRO_T[i
 /* ---------------- 状态 ---------------- */
 const S={
   cfg:CONFIGS[512], speed:1, running:false, maint:false, maintPending:false, alarm:null,
-  simTime:0, cphase:'IDLE', ct:0, cdur:0, tasks:null, events:[], index:0,
-  holders:[null,null,null,null], // 载具 h 上的条带对象
+  simTime:0, phase:'IDLE', segs:null, si:0, pt:0, events:[], ct:0,
+  incoming:null,   // 本周期进入针卡下方的条带
+  carrier:null,    // 载具上的条带
+  outgoing:null,   // 下料取放手里的条带
   seq:0, lot:'LOT-261023-A', planned:25, input:25, ok:0, ng:0,
-  strips:0, units:0, pass:0, fail:0, cycles:[], yields:[], lastCycleStart:null,
+  strips:0, units:0, pass:0, fail:0, cycles:[], yields:[], lastDone:null,
   hist:new Array(40).fill(0), lastMeas:[], explode:false, ghost:false, view:'overview', tab:'run',
-  clean:null, swap:null, agv:0, agvOn:false, testStrip:null,
+  clean:null, swap:null, agv:0, agvOn:false,
   maintItems:[
-    {id:'top', name:'上针头 钨丝针', part:'topHead', unit:'次扎针', life:500000, used:312480, act:'一键换针头', desc:'接触 Top 0.12×0.15 mm 焊盘，寿命以扎针次数计；快换座 4 s 完成更换'},
-    {id:'bot', name:'下针头 Pogo 针', part:'bottomHead', unit:'次扎针', life:300000, used:201300, act:'更换 Pogo 针', desc:'接触 Bottom 0.35 mm 焊盘，承担 Force 电流'},
-    {id:'cln', name:'针尖清洁', part:'topHead', unit:'次扎针', life:5000, used:3820, act:'执行清洁', desc:'测试工位上清洁片，双面各扎 3 次去除氧化物与碎屑'},
-    {id:'vac', name:'真空滤芯（4 载具共用）', part:'vacuum', unit:'h', life:2000, used:1460, act:'更换滤芯', desc:'转台旋转接头供气，压降超限导致薄板翘曲'},
-    {id:'cam', name:'对位相机标定', part:'camera', unit:'h', life:720, used:410, act:'执行标定', desc:'标片复核相机像素当量与针头偏置'},
-    {id:'idx', name:'转台分度精度复核', part:'table', unit:'h', life:168, used:120, act:'已复核', desc:'4 工位重复定位 ≤ ±5 µm，用标片在测试工位复核'},
-    {id:'rail', name:'XY 步进台 / 取放轴润滑', part:'xy', unit:'h', life:1000, used:620, act:'已润滑', desc:'针头 XY 步进、取放机构直线轴'}
+    {id:'top', name:'上针卡（细针）', part:'topCard', unit:'次扎针', life:300000, used:188400, act:'更换针卡', desc:'Top 0.12×0.15 mm 焊盘；卡座解锁后针卡从前门抽出，离线修针'},
+    {id:'bot', name:'下针卡（Pogo）', part:'botCard', unit:'次扎针', life:500000, used:301300, act:'更换针卡', desc:'Bottom 0.35 mm 焊盘；Pogo 针可单根更换'},
+    {id:'cln', name:'针尖清洁', part:'topCard', unit:'次扎针', life:5000, used:3820, act:'执行清洁', desc:'载具上放清洁片，上下针卡各扎 3 次去除氧化物与碎屑'},
+    {id:'vac', name:'真空滤芯', part:'vacuum', unit:'h', life:2000, used:1460, act:'更换滤芯', desc:'载具真空回路，压降超限导致薄板翘曲'},
+    {id:'cam', name:'对位相机标定', part:'camera', unit:'h', life:720, used:410, act:'执行标定', desc:'标片复核相机像素当量与针卡偏置'},
+    {id:'coax', name:'上下针卡同轴复核', part:'cframe', unit:'h', life:168, used:120, act:'已复核', desc:'标片双面针痕核对，≤ ±20 µm'},
+    {id:'rail', name:'XYθ 台 / 取放轴润滑', part:'xy', unit:'h', life:1000, used:620, act:'已润滑', desc:'载具 XYθ 步进台、取放机构直线轴'}
   ]
 };
-const holderAt = s => S.holders[((s - S.index) % 4 + 4) % 4]; // 处于工位 s 的载具编号对应的条带
-const holderIdxAt = s => ((s - S.index) % 4 + 4) % 4;
 
 /* ---------------- 日志 ---------------- */
 const logEl=$('log');
@@ -503,10 +500,10 @@ function log(msg,cls=''){
 }
 
 /* ---------------- 周期引擎 ---------------- */
-let mapDirty=true, texDirty=true, measDirty=true, histDirty=true, yieldDirty=true;
+let mapDirty=true, measDirty=true, histDirty=true, yieldDirty=true;
 function newStripObj(){
   S.seq++;
-  const o={id:`GME-MOS-2610-${String(S.seq).padStart(4,'0')}`, res:new Uint8Array(UNITS), vals:new Float32Array(UNITS*3), bin:new Uint8Array(UNITS), k:-1, tdDone:0, start:S.simTime, cluster:null, placed:false, picked:false, align:null, texDirty:true};
+  const o={id:`GME-MOS-2610-${String(S.seq).padStart(4,'0')}`, res:new Uint8Array(UNITS), vals:new Float32Array(UNITS*3), bin:new Uint8Array(UNITS), k:-1, tdDone:0, start:S.simTime, cluster:null, placed:false, align:null, texDirty:true, done:false};
   if(Math.random()<.12){ const c=Math.floor(Math.random()*COLS), r0=Math.floor(Math.random()*16); o.cluster={c,r0,r1:r0+8}; }
   return o;
 }
@@ -521,52 +518,59 @@ function measureUnit(st,idx){
   if(bin!==5){ if(vf<.5||vf>.9) bin=2; else if(ig>100) bin=3; else if(vs<.6||vs>2.88) bin=4; }
   return {vf,ig,vs,bin};
 }
-function startWork(){
-  const cfg=S.cfg, tasks={}, ev=[];
-  const hL=holderIdxAt(0), hA=holderIdxAt(1), hT=holderIdxAt(2), hU=holderIdxAt(3);
-  if(!S.holders[hL]&&S.input>0){ const st=newStripObj(); S.holders[hL]=st; S.input--; tasks.load=st;
-    ev.push({t:1.1,f:()=>log(`${st.id} 读码完成，ID 绑定 Lot ${S.lot}`)}); ev.push({t:2.4,f:()=>{ st.placed=true; }}); }
-  if(S.holders[hA]){ const st=S.holders[hA]; tasks.align=st; ev.push({t:T.ALIGN,f:()=>{ st.align={dx:(randn()*6).toFixed(0),dy:(randn()*6).toFixed(0),th:(randn()*.004).toFixed(3)}; log(`${st.id} Top 面对位：Δx ${st.align.dx} µm，Δy ${st.align.dy} µm，θ ${st.align.th}°`); }}); }
-  if(S.holders[hT]){ const st=S.holders[hT]; tasks.test=st; S.testStrip=st; st.k=-1; st.tdDone=0;
+function finishStrip(st){
+  let p=0; for(let i=0;i<UNITS;i++) if(st.res[i]===2) p++; const y=p/UNITS*100, okS=y>=97;
+  S.strips++; S.units+=UNITS; S.pass+=p; S.fail+=UNITS-p; S.yields.push({id:st.id,y}); if(S.yields.length>20) S.yields.shift(); if(okS) S.ok++; else S.ng++; yieldDirty=true;
+  if(S.lastDone!=null){ S.cycles.push(S.simTime-S.lastDone); if(S.cycles.length>5) S.cycles.shift(); } S.lastDone=S.simTime;
+  log(`${st.id} 完成，良率 ${y.toFixed(2)}%，${okS?'入 OK 料盒':'入 NG 料盒'}`, okS?'ok':'w');
+}
+function stripIsOk(st){ let p=0; for(let i=0;i<UNITS;i++) if(st.res[i]===2) p++; return p/UNITS>=.97; }
+function startCycle(){
+  const cfg=S.cfg, ev=[];
+  const prev=S.carrier&&S.carrier.done?S.carrier:null;
+  const hasNew=S.input>0;
+  if(!prev&&!hasNew){ S.phase=S.input<=0?'WAIT':'IDLE'; S.segs=null; return false; }
+  let incoming=null;
+  if(hasNew){ incoming=newStripObj(); S.input--; }
+  // 换片：0–1.5 下料取片并移走；1.5–3.5 上料放片（2.5 读码）；3.5–4 真空/张力夹
+  if(prev){ ev.push({t:.6,f:()=>{ S.outgoing=prev; S.carrier=null; }}); ev.push({t:3.4,f:()=>{ finishStrip(prev); S.outgoing=null; }}); }
+  if(incoming){ ev.push({t:2.5,f:()=>log(`${incoming.id} 读码完成，ID 绑定 Lot ${S.lot}`)}); ev.push({t:3.5,f:()=>{ S.carrier=incoming; incoming.placed=true; mapDirty=true; }}); ev.push({t:4,f:()=>log(`${incoming.id} 真空吸附 + 张力夹到位`)}); }
+  if(!incoming){ S.segs=[{k:'EXCH',n:'换片',d:T.EXCH,c:'--s1'}]; }
+  else {
+    S.segs=SEGS(cfg);
+    const tA=T.EXCH+T.MOVE, tP=tA+T.ALIGN;
+    ev.push({t:tP,f:()=>{ incoming.align={dx:(randn()*6).toFixed(0),dy:(randn()*6).toFixed(0),th:(randn()*.004).toFixed(3)}; log(`${incoming.id} Top 面对位：Δx ${incoming.align.dx} µm，Δy ${incoming.align.dy} µm，θ ${incoming.align.th}°`); }});
     for(let k=0;k<cfg.N;k++){
-      ev.push({t:k*TD,f:()=>{ st.k=k; }});
-      ev.push({t:k*TD+MICRO_T[4],f:()=>{ S.lastMeas=[]; for(const i of tdUnits(cfg,k)){ st.res[i]=1; S.lastMeas.push({i,pending:true}); } st.texDirty=true; mapDirty=measDirty=true; }});
-      ev.push({t:k*TD+MICRO_T[5],f:()=>{ S.lastMeas=[]; for(const i of tdUnits(cfg,k)){ const m=measureUnit(st,i); st.vals[i*3]=m.vf; st.vals[i*3+1]=m.ig; st.vals[i*3+2]=m.vs; st.bin[i]=m.bin; st.res[i]=m.bin===1?2:3; if(Number.isFinite(m.vs)){ S.hist[clamp(Math.floor(m.vs/.1),0,39)]++; } S.lastMeas.push({i,...m}); if(m.bin===5) log(`${st.id} 单元 C${Math.floor(i/ROWS)+1}R${i%ROWS+1} 接触不良（Bin 5）`,'w'); }
-        st.tdDone=k+1; for(const it of S.maintItems) if(it.unit==='次扎针') it.used++; st.texDirty=true; mapDirty=measDirty=histDirty=true; }});
+      ev.push({t:tP+k*TD,f:()=>{ incoming.k=k; }});
+      ev.push({t:tP+k*TD+MICRO_T[4],f:()=>{ S.lastMeas=[]; for(const i of tdUnits(cfg,k)){ incoming.res[i]=1; S.lastMeas.push({i,pending:true}); } incoming.texDirty=true; mapDirty=measDirty=true; }});
+      ev.push({t:tP+k*TD+MICRO_T[5],f:()=>{ S.lastMeas=[]; for(const i of tdUnits(cfg,k)){ const m=measureUnit(incoming,i); incoming.vals[i*3]=m.vf; incoming.vals[i*3+1]=m.ig; incoming.vals[i*3+2]=m.vs; incoming.bin[i]=m.bin; incoming.res[i]=m.bin===1?2:3; if(Number.isFinite(m.vs)) S.hist[clamp(Math.floor(m.vs/.1),0,39)]++; S.lastMeas.push({i,...m}); if(m.bin===5) log(`${incoming.id} 单元 C${Math.floor(i/ROWS)+1}R${i%ROWS+1} 接触不良（Bin 5）`,'w'); }
+        incoming.tdDone=k+1; for(const it of S.maintItems) if(it.unit==='次扎针') it.used++; incoming.texDirty=true; mapDirty=measDirty=histDirty=true; }});
     }
+    ev.push({t:tP+cfg.N*TD,f:()=>{ incoming.done=true; }});
   }
-  if(S.holders[hU]){ const st=S.holders[hU]; tasks.unload=st; ev.push({t:.6,f:()=>{ st.picked=true; }});
-    ev.push({t:2.6,f:()=>{ let p=0; for(let i=0;i<UNITS;i++) if(st.res[i]===2) p++; const y=p/UNITS*100, okS=y>=97; S.strips++; S.units+=UNITS; S.pass+=p; S.fail+=UNITS-p; S.yields.push({id:st.id,y}); if(S.yields.length>20) S.yields.shift(); if(okS) S.ok++; else S.ng++; S.holders[hU]=null; yieldDirty=true;
-      if(S.lastDone!=null){ S.cycles.push(S.simTime-S.lastDone); if(S.cycles.length>5) S.cycles.shift(); } S.lastDone=S.simTime;
-      log(`${st.id} 完成，良率 ${y.toFixed(2)}%，${okS?'入 OK 料盒':'入 NG 料盒'}`, okS?'ok':'w'); }}); }
-  const durs=[tasks.load?T.LOAD:0, tasks.align?T.ALIGN:0, tasks.test?cfg.N*TD:0, tasks.unload?T.UNLOAD:0];
-  const d=Math.max(...durs);
-  if(d<=0){ S.cphase=S.input<=0?'WAIT':'IDLE'; S.tasks=null; return false; }
   ev.sort((a,b)=>a.t-b.t);
-  S.tasks=tasks; S.events=ev; S.cphase='WORK'; S.ct=0; S.cdur=d;
+  S.events=ev; S.si=0; S.pt=0; S.ct=0; S.phase=S.segs[0].k; S.incoming=incoming;
+  if(incoming) log(`${incoming.id} 上料，开始周期（${cfg.name}，${cfg.N} 次扎针）`);
   return true;
 }
 function advance(dt){
   if(S.alarm) return;
-  if(S.clean||S.swap){ const a=S.clean||S.swap; a.t+=dt; S.simTime+=dt; tickHours(dt); if(a.t>=a.dur){ if(S.clean){ S.clean=null; log('针尖清洁完成','ok'); } else { S.swap=null; log('上针头快换完成，针头偏置自动标定','ok'); } } return; }
+  if(S.clean||S.swap){ const a=S.clean||S.swap; a.t+=dt; S.simTime+=dt; tickHours(dt); if(a.t>=a.dur){ if(S.clean){ S.clean=null; log('针尖清洁完成','ok'); } else { S.swap=null; log('针卡更换完成：卡座锁紧，针卡偏置自动标定','ok'); } } return; }
   if(S.maint){ S.simTime+=dt; return; }
   let rem=dt;
   while(rem>0){
-    if(S.cphase==='IDLE'||S.cphase==='WAIT'){
+    if(!S.segs){
       if(!S.running){ S.simTime+=rem; return; }
-      if(!startWork()){ S.simTime+=rem; tickHours(rem); return; }
+      if(!startCycle()){ S.simTime+=rem; tickHours(rem); return; }
     }
-    if(S.cphase==='WORK'){
-      const step=Math.min(rem,S.cdur-S.ct); S.ct+=step; S.simTime+=step; rem-=step; tickHours(step);
-      while(S.events.length&&S.events[0].t<=S.ct+1e-9) S.events.shift().f();
-      if(S.ct>=S.cdur-1e-9){ S.cphase='INDEX'; S.ct=0; S.cdur=T.INDEX; }
-    } else if(S.cphase==='INDEX'){
-      const step=Math.min(rem,S.cdur-S.ct); S.ct+=step; S.simTime+=step; rem-=step; tickHours(step);
-      if(S.ct>=S.cdur-1e-9){ S.index++; S.cphase='IDLE'; if(S.maintPending){ enterMaint(); return; } if(!S.running) return; }
-    }
+    const seg=S.segs[S.si], step=Math.min(rem,seg.d-S.pt);
+    S.pt+=step; S.ct+=step; S.simTime+=step; rem-=step; tickHours(step);
+    while(S.events.length&&S.events[0].t<=S.ct+1e-9) S.events.shift().f();
+    if(S.pt>=seg.d-1e-9){ S.si++; S.pt=0; if(S.si>=S.segs.length){ S.segs=null; S.phase='IDLE'; if(S.maintPending){ enterMaint(); return; } if(!S.running) return; } else S.phase=S.segs[S.si].k; }
   }
 }
 function tickHours(dt){ for(const it of S.maintItems) if(it.unit==='h') it.used+=dt/3600; }
+function cycleLen(){ return S.cfg.N*TD+OVERHEAD; }
 
 /* ---------------- 三维场景 ---------------- */
 const canvas=$('c3d'), vp=$('viewport');
@@ -588,6 +592,7 @@ const M={
   shell:std(0xe6e2d6,{roughness:.6}), shellDark:std(0xd9d4c6), trim:std(0xb8bcc2,{metalness:.7,roughness:.35}), glass:std(0x2b3542,{transparent:true,opacity:.55,roughness:.1,metalness:.2}),
   base:std(0x30363c,{roughness:.7}), granite:std(0x3c4148,{roughness:.35,metalness:.15}), alu:std(0x9ea7b0,{metalness:.55,roughness:.35}), steel:std(0xb9bec5,{metalness:.8,roughness:.3}),
   dark:std(0x23292f), navy:std(0x24405f), gold:std(0xc9a44a,{metalness:.7,roughness:.3}), white:std(0xf2f3f1), cable:std(0x1c1e21,{roughness:.9}),
+  pcb:std(0x1f6b3a,{roughness:.5}), pcbEdge:std(0xc9a44a,{metalness:.6,roughness:.35}), cardHolder:std(0x4a5560,{metalness:.5,roughness:.4}),
   screen:std(0x1a2f4a,{emissive:0x1e6fd0,emissiveIntensity:.9}), eva:std(0xe9eae6), evaBand:std(0x1f3a63), estop:std(0xc8102e,{emissive:0x600000,emissiveIntensity:.3}), estopRing:std(0xf2c300),
   lampR:std(0x5a1b1b,{emissive:0xd03b3b,emissiveIntensity:0}), lampY:std(0x5a4a10,{emissive:0xfab219,emissiveIntensity:0}), lampG:std(0x1b4a1b,{emissive:0x0ca30c,emissiveIntensity:0}),
   ring:std(0xffffff,{emissive:0xffffff,emissiveIntensity:.1}), reader:std(0x222,{emissive:0xd03b3b,emissiveIntensity:.1}), ceramic:std(0xf6f4ee,{roughness:.8}), curtain:std(0x3a3f45,{emissive:0xd03b3b,emissiveIntensity:.25}),
@@ -596,10 +601,10 @@ const M={
 const SHELL_MATS=[M.shell,M.shellDark,M.glass];
 const PARTS={};
 const INFO={
-  shell:['机壳 / 机架','焊接钢架 + 米色钣金封闭机壳，整机约 2,600 × 2,000 × 1,750 mm，带调平脚和脚轮；对标 M6 系列 L/UL 一体型布局。'],
-  doors:['测试区防护门','双开玻璃门，维护时解锁打开；门磁联锁：开门即停转台并断开针头 Z 轴使能。'],
-  window:['观察窗','深色钢化玻璃，运行中可看到转台与上下料机构。'],
-  port:['料盒舱','前面板中段的料盒舱：左侧上料盒，右侧 OK / NG 下料盒，操作员或 AGV 在此换盒。'],
+  shell:['机壳 / 机架','焊接钢架 + 米色钣金封闭机壳，整机约 2,600 × 2,000 × 1,750 mm，带调平脚和脚轮；L/UL 一体型布局对标 M6 系列。'],
+  doors:['测试区防护门','双开玻璃门，维护时解锁打开；门磁联锁：开门即停 XY 台并断开针卡 Z 轴使能。换针卡也从这里抽出。'],
+  window:['观察窗','深色钢化玻璃，运行中可看到载具与上下料机构。'],
+  port:['料盒舱','前面板中段的料盒舱：上料盒和 OK / NG 下料盒并排，操作员或 AGV 在此换盒。'],
   monitor:['主操作屏','配方、实时 Map、节拍与良率、报警与维护提醒；CIM V5.0 接口。'],
   lampBar:['状态灯带 / 按钮','绿：运行；黄：待料 / 维护；红：报警。旁边是启动、停止按钮和急停。'],
   estop:['急停','按下即切断所有运动轴使能，EVA100 转待命。'],
@@ -607,27 +612,29 @@ const INFO={
   inMag:['上料盒','25 条/盒，带升降机构保持取片面高度恒定；料盒空亮黄灯待料。'],
   okMag:['OK 料盒','单元良率 ≥ 97% 的条带。'],
   ngMag:['NG 料盒','单元良率 < 97% 的条带，Map 上传后人工复判。'],
-  pnpLoad:['上料取放机构','X 轴 + Z 轴真空吸头，从上料盒取片，途经读码器，放到转台投入工位的载具上。'],
-  pnpUnload:['下料取放机构','从排出工位取片，按良率送入 OK 或 NG 料盒。'],
-  reader:['2D 读码器','上料搬运途中全幅读取条带二维码，绑定 Lot / 条带 ID。'],
-  table:['旋转分度转台','4 工位 90° 分度：投入 → 对位 → 测试 → 排出，四个载具同时作业；工位下方开窗给下针头。'],
-  holder:['格栅窗口真空载具','吸附条带背面格栅区并用边缘张力夹拉平 0.28 mm 薄板；窗口露出 Bottom 焊盘。'],
-  clamp:['张力夹','两端边夹对拉，抑制薄条带翘曲，对应 M6 的 Tension clamp。'],
-  camera:['对位相机（对位工位）','只对 Top 面 Mark 对位，偏差送到测试工位的 XY 步进台补偿。Top 允差 ±35 µm，预算 ±17 µm。'],
-  cframe:['C 型刚性框架','上下针头共用同一框架和同一 XY 步进台，一次对位两面同轴。'],
-  xy:['XY 步进台','带着上下针头在条带上 Step & Repeat：512ch 每次 2 列，15 次走完一条。'],
-  topHead:['上针头','微细钨丝针阵列，接触 Top 面 8 个焊盘；承担 Sense 与 Gate，4 路 Sense 进 INA 前端；快换座。'],
-  stripper:['上压板（Stripper）','先于针尖压住条带，抬针时把条带从针尖剥离。'],
-  bottomHead:['下针头','Pogo 针阵列，经转台开窗接触 Bottom 面 9 个焊盘 + 中心焊盘；承担 Force 电流。'],
-  ina:['INA 前端板','4 路 Sense 差分放大 ×1 / ×100，3:1 复用进 EVA100 DGT，用于 0.6–2.88 mV 的 VS1S2。'],
+  pnpLoad:['上料取放机构','X 轴 + Z 轴真空吸头，从上料盒取片，途经读码器，放到换片位的载具上。'],
+  pnpUnload:['下料取放机构','在换片位从载具取走测完的条带，按良率送入 OK 或 NG 料盒；与下一条的测试并行。'],
+  reader:['2D 读码器','上料搬运途中读取条带二维码，绑定 Lot / 条带 ID。'],
+  xy:['XYθ 步进台','长行程 X 轴把载具在换片位和针卡下方之间来回；短行程 XYθ 做对位补偿和 Step & Repeat 步进。'],
+  carrier:['格栅窗口真空载具','吸附条带背面格栅区，边缘张力夹拉平 0.28 mm 薄板；窗口露出 Bottom 焊盘给下针卡。'],
+  clamp:['张力夹','两端边夹对拉，抑制薄条带翘曲。'],
+  camera:['对位相机','装在 C 型框架上、针卡旁边；载具先移到相机下取 Top 面 Mark，偏差送 XYθ 台补偿，再进针卡下方。'],
+  cframe:['C 型刚性框架','上下针卡单元装在同一框架上，一次对位两面同轴；大板不转台，结构简单成本低。'],
+  topCard:['上针卡（Probe Card）','PCB 针卡，细针接触 Top 面 8 个焊盘，承担 Sense 与 Gate；卡座快换，针卡成本远低于全板针座。'],
+  topHolder:['上针卡座 / 测试头对接','针卡装在卡座里，EVA100 测试头从上方经 Pogo tower 直接对接针卡，不用长电缆。整单元带 Z 轴。'],
+  stripper:['上压板（Stripper）','随上针卡下降先压住条带，抬针时把条带从针尖剥离。'],
+  botCard:['下针卡（Pogo Card）','Pogo 针卡，经载具窗口接触 Bottom 面 9 个焊盘 + 中心焊盘，承担 Force 电流。'],
+  botHolder:['下针卡座 / 测试头对接','下针卡装在下卡座，512ch 时第二台 EVA100 的测试头从下方对接；整单元带 Z 轴。'],
+  ina:['INA 前端板','装在上针卡上：4 路 Sense 差分放大 ×1 / ×100，3:1 复用进 EVA100 DGT，用于 0.6–2.88 mV 的 VS1S2。'],
   eva:['Advantest EVA100','测试源，内置后部机柜：每针 PPMU（−1.25 ~ +7 V，±32 mA）、DPS、AWG/DGT 18 bit。128/256 ch 一台，512 ch 两台。'],
-  cable:['测试头电缆','PPMU 与 Sense 线从 EVA100 测试头到针头，Sense 走屏蔽双绞。'],
-  vacuum:['真空单元','真空泵 + 滤芯 + 压力传感器，经转台旋转接头给 4 个载具供气。'],
-  controller:['运动控制器','转台分度、XY 步进、Z 合针、取放轴的伺服控制，与 EVA100 握手。'],
+  testhead:['EVA100 测试头','对接针卡的测试头，上下各一（512ch）；128/256 ch 时下卡经短电缆接上测试头。'],
+  cable:['测试头电缆','主机到测试头的系统电缆。'],
+  vacuum:['真空单元','真空泵 + 滤芯 + 压力传感器，为载具吸附供气；低于 −80 kPa 报警。'],
+  controller:['运动控制器','XYθ 台、Z 合针、取放轴的伺服控制，与 EVA100 握手。'],
   curtain:['安全光幕','料盒舱人体进入即停上下料机构。'],
   strip:['被测条带','142×66×0.28 mm，6 层，30×24 = 720 单元，每单元 2 颗 Nuvoton KFCAB12003NL 双 N-MOS 埋在 L4。'],
   agv:['AGV 对接（选配）','AGV 送料盒到料盒舱，自动换盒。'],
-  clean:['清洁片','维护时放到测试工位载具上，上下针头各扎 3 次。']
+  clean:['清洁片','维护时放到载具上，上下针卡各扎 3 次。']
 };
 function reg(key,mesh){ mesh.userData.part=key; (PARTS[key]||(PARTS[key]={meshes:[]})).meshes.push(mesh); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 function box(w,h,d,mat,x=0,y=0,z=0,key){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); if(key) reg(key,m); return m; }
@@ -641,28 +648,28 @@ const machine=new THREE.Group(); scene.add(machine);
 // ---- 机壳
 const shell=new THREE.Group(); machine.add(shell);
 for(const [x,z] of [[-120,-90],[120,-90],[-120,90],[120,90]]){ shell.add(cyl(3,10,M.steel,x,5,z,'shell')); shell.add(box(10,1.5,10,M.steel,x,.8,z,'shell')); }
-shell.add(box(260,8,200,M.base,0,14,0,'shell'));               // 底框
-shell.add(box(260,4,200,M.shell,0,172,0,'shell'));             // 顶板
-shell.add(box(260,154,3,M.shell,0,95,-98.5,'shell'));          // 背板
-shell.add(box(3,154,200,M.shell,-128.5,95,0,'shell'));         // 左侧板
-shell.add(box(3,154,200,M.shell,128.5,95,0,'shell'));          // 右侧板
-shell.add(box(40,60,2,M.glass,128.5,120,-20,'window'));        // 右侧观察窗
-shell.add(box(260,42,3,M.shell,0,39,98.5,'shell'));            // 前下裙板
+shell.add(box(260,8,200,M.base,0,14,0,'shell'));
+shell.add(box(260,4,200,M.shell,0,172,0,'shell'));
+shell.add(box(260,154,3,M.shell,0,95,-98.5,'shell'));
+shell.add(box(3,154,200,M.shell,-128.5,95,0,'shell'));
+shell.add(box(3,154,200,M.shell,128.5,95,0,'shell'));
+shell.add(box(40,60,2,M.glass,128.5,120,-20,'window'));
+shell.add(box(260,42,3,M.shell,0,39,98.5,'shell'));
 for(const x of [-95,-20,60]) shell.add(box(10,1.5,2,M.trim,x,30,100.5,'shell'));
 // L/UL 模块前面板（x −130…−50）
 shell.add(box(80,20,3,M.shell,-90,70,98.5,'shell'));
 shell.add(box(80,8,3,M.shell,-90,166,98.5,'shell'));
 shell.add(box(8,96,3,M.shell,-126,118,98.5,'shell')); shell.add(box(8,96,3,M.shell,-54,118,98.5,'shell'));
-shell.add(box(64,52,2,M.glass,-90,140,98.5,'window'));          // 上观察窗
+shell.add(box(64,52,2,M.glass,-90,140,98.5,'window'));
 shell.add(box(64,6,3,M.shell,-90,111,98.5,'shell'));
-shell.add(box(64,14,20,M.shellDark,-90,101,90,'port'));          // 料盒舱顶
-shell.add(box(64,2,20,M.shellDark,-90,80,90,'port'));            // 料盒舱底台
+shell.add(box(64,14,20,M.shellDark,-90,101,90,'port'));
+shell.add(box(64,2,20,M.shellDark,-90,80,90,'port'));
 for(const x of [-124,-56]) shell.add(box(2.4,30,2.4,M.curtain,x,94,92,'curtain'));
 // 操作模块前面板（x −50…10）
 shell.add(box(60,112,3,M.shell,-20,118,98.5,'shell'));
 shell.add(box(34,24,1.5,M.dark,-20,142,100.5,'monitor')); shell.add(box(31,21,.6,M.screen,-20,142,101.4,'monitor'));
 shell.add(box(30,3,1.2,M.dark,-22,122,100.5,'lampBar'));
-const barG=box(6,2,.6,M.lampG,-32,122,101.2,'lampBar'), barY=box(6,2,.6,M.lampY,-25,122,101.2,'lampBar'), barR=box(6,2,.6,M.lampR,-18,122,101.2,'lampBar'); shell.add(barG,barY,barR);
+shell.add(box(6,2,.6,M.lampG,-32,122,101.2,'lampBar'),box(6,2,.6,M.lampY,-25,122,101.2,'lampBar'),box(6,2,.6,M.lampR,-18,122,101.2,'lampBar'));
 shell.add(cyl(3.2,1,M.estopRing,-2,122,101,'estop',20).rotateX(Math.PI/2)); shell.add(cyl(2,2,M.estop,-2,122,102,'estop',20).rotateX(Math.PI/2));
 shell.add(box(16,12,1.2,M.dark,-20,100,100.5,'monitor')); shell.add(box(14,10,.6,M.screen,-20,100,101.3,'monitor'));
 // 测试模块：双开门（x 12…128）
@@ -672,64 +679,24 @@ door(doorL,1); door(doorR,-1); shell.add(doorL,doorR);
 shell.add(box(120,8,3,M.shell,70,166,98.5,'shell')); shell.add(box(120,2,3,M.shell,70,61,98.5,'shell'));
 // 三色灯
 shell.add(cyl(1,12,M.steel,112,180,-80,'tower'));
-const lampG=cyl(2.4,4,M.lampG,112,188,-80,'tower',16), lampY=cyl(2.4,4,M.lampY,112,192.2,-80,'tower',16), lampR=cyl(2.4,4,M.lampR,112,196.4,-80,'tower',16); shell.add(lampG,lampY,lampR);
+shell.add(cyl(2.4,4,M.lampG,112,188,-80,'tower',16),cyl(2.4,4,M.lampY,112,192.2,-80,'tower',16),cyl(2.4,4,M.lampR,112,196.4,-80,'tower',16));
 
 // ---- 内部平台与柜内设备
 machine.add(box(250,6,190,M.granite,0,21,0,'shell'));
 machine.add(box(30,26,26,M.dark,-100,38,-70,'vacuum')); machine.add(cyl(7,22,M.alu,-100,64,-70,'vacuum'));
 machine.add(box(50,30,24,M.navy,-40,40,-75,'controller'));
-// ---- EVA100（后部机柜）
+// ---- EVA100 主机（后部机柜）
 const evaG=new THREE.Group(); machine.add(evaG);
-function evaUnit(x){ const g=new THREE.Group(); g.position.x=x; g.add(box(32,76,40,M.eva,0,62,0,'eva')); g.add(box(32.4,4,40.4,M.evaBand,0,84,0,'eva')); g.add(box(30,24,30,M.dark,0,114,0,'eva')); g.add(box(20,10,.5,M.screen,0,66,20.3,'eva')); return g; }
+function evaUnit(x){ const g=new THREE.Group(); g.position.x=x; g.add(box(32,76,40,M.eva,0,62,0,'eva')); g.add(box(32.4,4,40.4,M.evaBand,0,84,0,'eva')); g.add(box(20,10,.5,M.screen,0,66,20.3,'eva')); return g; }
 evaG.position.set(0,0,-76); const eva1=evaUnit(72), eva2=evaUnit(108); evaG.add(eva1,eva2);
-// ---- 转台
-const table=new THREE.Group(); table.position.set(TABLE_C.x,96,TABLE_C.z); machine.add(table);
-machine.add(cyl(16,70,M.steel,TABLE_C.x,60,TABLE_C.z,'table'));
-const hub=cyl(20,3,M.alu,0,0,0,'table'); table.add(hub);
-const rim=new THREE.Mesh(new THREE.RingGeometry(54,62,72),std(0x9ea7b0,{metalness:.55,roughness:.35,side:THREE.DoubleSide})); rim.rotation.x=-Math.PI/2; rim.position.y=1.5; reg('table',rim); table.add(rim);
-for(let i=0;i<4;i++){ const a=Math.PI/4+i*Math.PI/2; const sp=box(40,2.4,6,M.alu,Math.cos(a)*37,.5,Math.sin(a)*37,'table'); sp.rotation.y=-a; table.add(sp); }
-const holders=[];
-for(let h=0;h<4;h++){
-  const [px,pz]=STPOS[h]; const g=new THREE.Group(); g.position.set(px,2,pz);
-  const ang=Math.atan2(pz,px); g.rotation.y=-ang; // 局部 x 轴沿径向
-  // 两条径向导轨（连接轮毂与轮缘）
-  g.add(box(42,1.2,1.6,M.alu,0,-.4,-6.2,'holder')); g.add(box(42,1.2,1.6,M.alu,0,-.4,6.2,'holder'));
-  g.add(box(16.4,1,1.2,M.alu,0,0,-4.1,'holder')); g.add(box(16.4,1,1.2,M.alu,0,0,4.1,'holder'));
-  g.add(box(1.2,1,9.4,M.alu,-7.6,0,0,'holder')); g.add(box(1.2,1,9.4,M.alu,7.6,0,0,'holder'));
-  for(let i=-2;i<=2;i++) g.add(box(.5,.8,8.6,M.alu,i*2.9,0,0,'holder'));
-  g.add(box(2.4,1.6,4,M.clamp,-9.2,.6,0,'clamp')); g.add(box(2.4,1.6,4,M.clamp,9.2,.6,0,'clamp'));
-  table.add(g); holders.push({grp:g});
-}
-// ---- 对位相机（对位工位：转台后方）
-const alignW={x:TABLE_C.x+STPOS[1][0], z:TABLE_C.z+STPOS[1][1]};
-machine.add(box(6,60,6,M.alu,alignW.x,135,-92,'camera')); machine.add(box(6,4,56,M.alu,alignW.x,163,alignW.z-24,'camera'));
-machine.add(box(5,8,5,M.dark,alignW.x,126,alignW.z,'camera')); machine.add(cyl(1.5,30,M.steel,alignW.x,146,alignW.z,'camera'));
-const ringLight=new THREE.Mesh(new THREE.TorusGeometry(3.4,.7,10,32),M.ring); ringLight.rotation.x=Math.PI/2; ringLight.position.set(alignW.x,120,alignW.z); reg('camera',ringLight); machine.add(ringLight);
-// ---- C 型框架 + XY 步进台 + 针头（测试工位：转台右侧）
-const testW={x:TABLE_C.x+STPOS[2][0], z:TABLE_C.z+STPOS[2][1]};
-const cframe=new THREE.Group(); machine.add(cframe);
-cframe.add(box(20,116,34,M.shell,116,82,testW.z,'cframe'));
-cframe.add(box(66,14,34,M.shell,83,145,testW.z,'cframe'));
-cframe.add(box(66,12,34,M.shell,83,46,testW.z,'cframe'));
-cframe.add(box(10,6,14,M.navy,80,155,testW.z-8,'ina'));
-const xyTop=new THREE.Group(); xyTop.position.set(testW.x,142,testW.z); cframe.add(xyTop);
-xyTop.add(box(24,4,20,M.alu,0,-1,0,'xy'));
-const topHead=new THREE.Group(); xyTop.add(topHead);
-topHead.add(box(8,26,10,M.alu,0,-16,0,'topHead')); topHead.add(box(7,9,12,M.navy,0,-31.5,0,'topHead')); topHead.add(box(4,1.2,8,M.gold,0,-36.4,0,'topHead'));
-const stripper=new THREE.Group(); topHead.add(stripper); stripper.add(box(10,.6,14,M.white,0,-37.4,0,'stripper'));
-const xyBot=new THREE.Group(); xyBot.position.set(testW.x,52,testW.z); cframe.add(xyBot);
-xyBot.add(box(24,4,20,M.alu,0,1,0,'xy'));
-const bottomHead=new THREE.Group(); xyBot.add(bottomHead);
-bottomHead.add(box(12,6,16,M.alu,0,6,0,'bottomHead')); bottomHead.add(box(8,34,12,M.navy,0,27,0,'bottomHead')); bottomHead.add(box(4,1.2,8,M.gold,0,45.8,0,'bottomHead'));
-// 针头 Z 行程：条带上表面 y≈98.7；上针头尖端 = 142 + topHead.y − 37；下针头尖端 = 52 + bottomHead.y + 46.4
-const TOP_UP=0, TOP_DN=-6.3, TOP_SVC=14, BOT_UP=0, BOT_DN=-8, BOT_SVC=-14;
-topHead.position.y=TOP_UP; bottomHead.position.y=BOT_DN;
-// 电缆
-function tube(pts,r,key){ const c=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))); const m=new THREE.Mesh(new THREE.TubeGeometry(c,48,r,8,false),M.cable); reg(key,m); return m; }
-machine.add(tube([[testW.x,152,testW.z],[testW.x+10,165,-20],[90,150,-50],[72,128,-76]],1.4,'cable'));
-machine.add(tube([[testW.x,40,testW.z],[testW.x+20,36,-30],[108,80,-55],[108,128,-76]],1.4,'cable'));
-// ---- 料盒与取放机构（L/UL 模块）
-const magPos={in:{x:-100,z:0}, ok:{x:-75,z:42}, ng:{x:-112,z:42}};
+
+// ---- 工位坐标
+const LINE_Z=40;                      // 换片位 / 料盒所在的前排
+const EXCH={x:-30,z:LINE_Z};          // 换片位
+const PROBE={x:40,z:0};               // 针卡中心
+const CAMX=PROBE.x-22;                // 相机位置（针卡旁）
+// ---- 料盒与取放机构
+const magPos={in:{x:-64,z:LINE_Z}, ok:{x:-88,z:LINE_Z}, ng:{x:-112,z:LINE_Z}};
 function magazine(p,key){ const g=new THREE.Group(); g.position.set(p.x,0,p.z); g.add(box(20,40,1.6,M.alu,0,100,-5.6,key)); g.add(box(20,40,1.6,M.alu,0,100,5.6,key)); g.add(box(1.6,40,12,M.alu,-10,100,0,key)); g.add(box(22,3,14,M.dark,0,80,0,key)); machine.add(g); return g; }
 magazine(magPos.in,'inMag'); magazine(magPos.ok,'okMag'); magazine(magPos.ng,'ngMag');
 const stackMat=std(0x2d6a46);
@@ -738,13 +705,56 @@ const okStack=new THREE.InstancedMesh(new THREE.BoxGeometry(14.2,.3,6.6),stackMa
 const ngStack=new THREE.InstancedMesh(new THREE.BoxGeometry(14.2,.3,6.6),std(0x8a3a3a),60); machine.add(ngStack);
 const _m=new THREE.Matrix4();
 function fillStack(inst,n,p){ inst.count=Math.min(n,inst.instanceMatrix.count); for(let i=0;i<inst.count;i++){ _m.makeTranslation(p.x,82+i*.42,p.z); inst.setMatrixAt(i,_m);} inst.instanceMatrix.needsUpdate=true; }
-const loadW={x:TABLE_C.x+STPOS[0][0], z:TABLE_C.z+STPOS[0][1]}, unloadW={x:TABLE_C.x+STPOS[3][0], z:TABLE_C.z+STPOS[3][1]};
-// 取放 X 轴梁
-machine.add(box(100,6,8,M.alu,-66,136,loadW.z,'pnpLoad')); machine.add(box(6,56,8,M.alu,-114,108,loadW.z,'pnpLoad'));
-machine.add(box(140,6,8,M.alu,-48,136,unloadW.z,'pnpUnload')); machine.add(box(6,56,8,M.alu,-116,108,unloadW.z,'pnpUnload'));
-const carL=new THREE.Group(); machine.add(carL); carL.add(box(10,8,10,M.dark,0,136,0,'pnpLoad')); const zL=box(3,28,3,M.steel,0,118,0,'pnpLoad'); carL.add(zL); const padL=box(12,1,5,M.rubber,0,104,0,'pnpLoad'); carL.add(padL);
-const carU=new THREE.Group(); machine.add(carU); carU.add(box(10,8,10,M.dark,0,136,0,'pnpUnload')); const zU=box(3,28,3,M.steel,0,118,0,'pnpUnload'); carU.add(zU); const padU=box(12,1,5,M.rubber,0,104,0,'pnpUnload'); carU.add(padU);
-machine.add(box(5,5,8,M.reader,-62,124,loadW.z-8,'reader'));
+// 取放 X 轴梁：上料在 z=LINE_Z−6，下料在 z=LINE_Z+6，吸头臂伸到 z=LINE_Z
+machine.add(box(60,6,6,M.alu,-47,136,LINE_Z-6,'pnpLoad')); machine.add(box(6,56,6,M.alu,-76,108,LINE_Z-6,'pnpLoad'));
+machine.add(box(96,6,6,M.alu,-70,142,LINE_Z+6,'pnpUnload')); machine.add(box(6,62,6,M.alu,-117,111,LINE_Z+6,'pnpUnload'));
+const carL=new THREE.Group(); machine.add(carL); carL.add(box(10,8,8,M.dark,0,136,LINE_Z-6,'pnpLoad')); carL.add(box(3,3,8,M.steel,0,131,LINE_Z-2,'pnpLoad')); const zL=box(3,28,3,M.steel,0,118,LINE_Z,'pnpLoad'); carL.add(zL); const padL=box(12,1,5,M.rubber,0,104,LINE_Z,'pnpLoad'); carL.add(padL);
+const carU=new THREE.Group(); machine.add(carU); carU.add(box(10,8,8,M.dark,0,142,LINE_Z+6,'pnpUnload')); carU.add(box(3,3,8,M.steel,0,137,LINE_Z+2,'pnpUnload')); const zU=box(3,34,3,M.steel,0,121,LINE_Z,'pnpUnload'); carU.add(zU); const padU=box(12,1,5,M.rubber,0,104,LINE_Z,'pnpUnload'); carU.add(padU);
+machine.add(box(5,5,8,M.reader,-47,124,LINE_Z-10,'reader'));
+// ---- XYθ 载具台
+const xyBase=box(130,6,16,M.steel,5,89,20,'xy'); machine.add(xyBase);          // 长行程 X 轴（z 20 居中，覆盖 z 0…40）
+const xCar=new THREE.Group(); machine.add(xCar);                                 // X 滑块 + Y 轴
+xCar.add(box(34,5,56,M.alu,0,93.5,20,'xy'));
+const carrier=new THREE.Group(); xCar.add(carrier);                               // Y 滑块 + 载具
+carrier.add(box(22,3,14,M.steel,0,97.5,0,'xy'));
+carrier.add(box(16.4,1,1.2,M.alu,0,99.5,-4.1,'carrier')); carrier.add(box(16.4,1,1.2,M.alu,0,99.5,4.1,'carrier'));
+carrier.add(box(1.2,1,9.4,M.alu,-7.6,99.5,0,'carrier')); carrier.add(box(1.2,1,9.4,M.alu,7.6,99.5,0,'carrier'));
+for(let i=-2;i<=2;i++) carrier.add(box(.5,.8,8.6,M.alu,i*2.9,99.5,0,'carrier'));
+carrier.add(box(2.4,1.6,4,M.clamp,-9.2,100.1,0,'clamp')); carrier.add(box(2.4,1.6,4,M.clamp,9.2,100.1,0,'clamp'));
+const STRIP_Y=100.12;
+// ---- C 型框架（开口朝前）、上下针卡单元
+const cframe=new THREE.Group(); machine.add(cframe);
+cframe.add(box(40,130,22,M.shell,PROBE.x,92,-50,'cframe'));                     // 立柱（后方）
+cframe.add(box(40,14,62,M.shell,PROBE.x,152,-20,'cframe'));                      // 上臂
+cframe.add(box(40,12,62,M.shell,PROBE.x,34,-20,'cframe'));                       // 下臂
+// 相机（上臂前端，针卡旁）
+cframe.add(box(6,4,30,M.alu,CAMX,144,PROBE.z-8,'camera')); cframe.add(box(5,8,5,M.dark,CAMX,131,PROBE.z,'camera')); cframe.add(cyl(1.5,10,M.steel,CAMX,140,PROBE.z,'camera'));
+const ringLight=new THREE.Mesh(new THREE.TorusGeometry(3.2,.6,10,32),M.ring); ringLight.rotation.x=Math.PI/2; ringLight.position.set(CAMX,126,PROBE.z); reg('camera',ringLight); cframe.add(ringLight);
+// 上针卡单元：Z 滑座 → 测试头 → 卡座 → 针卡 → 针块 → 压板
+const topUnit=new THREE.Group(); topUnit.position.set(PROBE.x,145,PROBE.z); cframe.add(topUnit);
+topUnit.add(box(14,10,14,M.alu,0,-5,-20,'topHolder'));                           // Z 滑座（挂在上臂下）
+topUnit.add(box(14,4,30,M.alu,0,-12,-6,'topHolder'));
+topUnit.add(box(36,20,36,M.dark,0,-24,0,'testhead'));                            // 上测试头
+topUnit.add(box(30,3,30,M.cardHolder,0,-35.5,0,'topHolder'));                    // 卡座 / Pogo tower
+const topCard=new THREE.Group(); topUnit.add(topCard); topCard.position.y=-38;
+topCard.add(box(32,1.2,32,M.pcb,0,0,0,'topCard')); topCard.add(box(33,.4,33,M.pcbEdge,0,-.7,0,'topCard'));
+topCard.add(box(5,3,9,M.navy,0,-2.4,0,'topCard')); topCard.add(box(3.6,.8,7.6,M.gold,0,-4.3,0,'topCard'));   // 针块与针尖
+topCard.add(box(6,1.6,6,M.navy,10,-1.6,-10,'ina'));
+const stripper=new THREE.Group(); topCard.add(stripper); stripper.add(box(10,.5,13,M.white,0,-4.6,0,'stripper'));
+// 下针卡单元：下臂 → Z 滑座 → 测试头 → 卡座 → 针卡 → Pogo 块
+const botUnit=new THREE.Group(); botUnit.position.set(PROBE.x,40,PROBE.z); cframe.add(botUnit);
+botUnit.add(box(14,10,14,M.alu,0,5,-20,'botHolder')); botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder'));
+const botHead=box(36,20,36,M.dark,0,24,0,'testhead'); botUnit.add(botHead);
+botUnit.add(box(30,3,30,M.cardHolder,0,35.5,0,'botHolder'));
+const botCard=new THREE.Group(); botUnit.add(botCard); botCard.position.y=38;
+botCard.add(box(32,1.2,32,M.pcb,0,0,0,'botCard')); botCard.add(box(33,.4,33,M.pcbEdge,0,.7,0,'botCard'));
+botCard.add(box(5,16,9,M.navy,0,8.6,0,'botCard')); botCard.add(box(3.6,.8,7.6,M.gold,0,17,0,'botCard'));
+// Z 行程：上针尖底 = 145 + topUnit.dy − 38 − 4.7 = 102.3 → 合针到 100.25 需 dy = −2.05；下针尖顶 = 40 + dy + 38 + 17.4 = 95.4 → 合针到 100 需 dy = +4.6
+const TOP_UP=0, TOP_DN=-2.05, TOP_SVC=10, BOT_DN=0, BOT_UP=4.6, BOT_SVC=-8;
+// 系统电缆：主机 → 测试头
+function tube(pts,r,key){ const c=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))); const m=new THREE.Mesh(new THREE.TubeGeometry(c,48,r,8,false),M.cable); reg(key,m); return m; }
+machine.add(tube([[PROBE.x,130,-18],[PROBE.x+10,150,-45],[72,120,-60],[72,90,-76]],1.6,'cable'));
+const cableBot=tube([[PROBE.x,54,-18],[PROBE.x+20,46,-45],[108,70,-62],[108,90,-76]],1.6,'cable'); machine.add(cableBot);
 // ---- AGV（选配）
 const agv=new THREE.Group(); agv.position.set(-200,0,60); agv.visible=false; machine.add(agv);
 agv.add(box(60,20,40,M.agv,0,16,0,'agv')); for(const [x,z] of [[-22,-16],[22,-16],[-22,16],[22,16]]) agv.add(cyl(5,4,M.rubber,x,5,z,'agv').rotateX(Math.PI/2));
@@ -767,19 +777,19 @@ function makeStripMesh(){
   const cv=document.createElement('canvas'); cv.width=600; cv.height=280; const g=cv.getContext('2d'); g.drawImage(topBase,0,0);
   const tex=new THREE.CanvasTexture(cv); tex.encoding=THREE.sRGBEncoding;
   const m=new THREE.Mesh(new THREE.BoxGeometry(14.2,.12,6.6),[sideMat,sideMat,new THREE.MeshStandardMaterial({map:tex,roughness:.5}),new THREE.MeshStandardMaterial({map:botTex,roughness:.5}),sideMat,sideMat]);
-  m.castShadow=true; m.userData.part='strip'; m.visible=false; return {mesh:m,cv,g,tex};
+  m.castShadow=true; m.userData.part='strip'; m.visible=false; return {mesh:m,cv,g,tex,cur:null};
 }
 function paintStrip(sm,res){ sm.g.drawImage(topBase,0,0); if(res){ for(let i=0;i<UNITS;i++){ const s=res[i]; if(!s) continue; const c=Math.floor(i/ROWS), r=i%ROWS; sm.g.fillStyle=s===1?'rgba(57,135,229,.75)':s===2?'rgba(12,163,12,.55)':'rgba(208,59,59,.8)'; sm.g.fillRect(c*20+.5,r*11.67+.5,19,10.7); } } sm.tex.needsUpdate=true; }
-for(const h of holders){ h.strip=makeStripMesh(); h.strip.mesh.position.y=.62; h.grp.add(h.strip.mesh); }
-const transit=makeStripMesh(); machine.add(transit.mesh);        // 搬运中的条带
+const carStrip=makeStripMesh(); carStrip.mesh.position.y=STRIP_Y; carrier.add(carStrip.mesh);
+const transit=makeStripMesh(); machine.add(transit.mesh);
 const transitU=makeStripMesh(); machine.add(transitU.mesh);
-const cleanSheet=box(14.2,.12,6.6,M.ceramic,0,.62,0,'clean'); cleanSheet.visible=false;
+const cleanSheet=box(14.2,.12,6.6,M.ceramic,0,STRIP_Y,0,'clean'); cleanSheet.visible=false; carrier.add(cleanSheet);
 
 /* ---------------- 相机视角 ---------------- */
 const VIEWS={
-  overview:{p:[230,170,330],t:[0,80,0],ghost:false}, table:{p:[90,220,150],t:[TABLE_C.x,96,0],ghost:true}, station:{p:[testW.x+40,132,70],t:[testW.x,100,testW.z],ghost:true},
-  top:{p:[testW.x+22,116,30],t:[testW.x,103,testW.z],ghost:true}, bottom:{p:[testW.x+28,88,36],t:[testW.x,93,testW.z],ghost:true}, lul:{p:[-40,190,220],t:[-80,100,20],ghost:true},
-  section:{p:[testW.x,108,46],t:[testW.x,101,testW.z],ghost:true}
+  overview:{p:[230,170,330],t:[0,80,0],ghost:false}, inside:{p:[60,230,190],t:[-10,90,20],ghost:true}, station:{p:[PROBE.x+60,135,80],t:[PROBE.x,100,PROBE.z],ghost:true},
+  topcard:{p:[PROBE.x+34,120,36],t:[PROBE.x,104,PROBE.z],ghost:true}, botcard:{p:[PROBE.x+34,84,40],t:[PROBE.x,93,PROBE.z],ghost:true}, lul:{p:[-30,190,220],t:[-70,100,40],ghost:true},
+  section:{p:[PROBE.x,108,48],t:[PROBE.x,101,PROBE.z],ghost:true}
 };
 let camAnim=null;
 function setGhost(on){
@@ -827,119 +837,111 @@ canvas.addEventListener('pointerup',ev=>{ if(!downAt||Math.hypot(ev.clientX-down
 
 /* ---------------- 三维标签 ---------------- */
 const LABELS=[
-  {obj:topHead, off:[0,-8,0], text:'上针头 · 钨丝针 · Sense + Gate'},
-  {obj:stripper, off:[0,-37.4,-7], text:'上压板 Stripper'},
-  {get obj(){ return holders[holderIdxAt(2)].grp; }, off:[8,2,0], text:'条带 142×66×0.28 mm · 真空载具 + 张力夹'},
-  {obj:bottomHead, off:[0,10,0], text:'下针头 · Pogo · Force'},
-  {obj:xyTop, off:[0,4,0], text:'XY 步进台（上下共用）'}
+  {obj:topUnit, off:[0,-24,18], text:'上测试头（EVA100）直接对接针卡'},
+  {obj:topCard, off:[-16,0,0], text:'上针卡 · 细针 · Sense + Gate · INA 前端'},
+  {obj:stripper, off:[0,-5,-7], text:'上压板 Stripper'},
+  {obj:carStrip.mesh, off:[8,0,0], text:'条带 142×66×0.28 mm · 真空载具 + 张力夹'},
+  {obj:botCard, off:[-16,0,0], text:'下针卡 · Pogo · Force'},
+  {obj:botHead, off:[0,0,18], text:'下测试头（512ch 第二台）'}
 ];
 const labelsEl=$('labels'); const labelDivs=LABELS.map(l=>{ const d=document.createElement('div'); d.className='lbl'; d.textContent=l.text; d.hidden=true; labelsEl.appendChild(d); return d; });
 const _v=new THREE.Vector3();
 function updateLabels(){
   const show=S.explode||S.view==='section';
-  LABELS.forEach((l,i)=>{ const d=labelDivs[i]; if(!show){ d.hidden=true; return; } l.obj.getWorldPosition(_v); _v.x+=l.off[0]; _v.y+=l.off[1]; _v.z+=l.off[2]; _v.project(camera);
+  LABELS.forEach((l,i)=>{ const d=labelDivs[i]; if(!show||!l.obj.visible){ d.hidden=true; return; } l.obj.getWorldPosition(_v); _v.x+=l.off[0]; _v.y+=l.off[1]; _v.z+=l.off[2]; _v.project(camera);
     if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){ d.hidden=true; return; } d.hidden=false; d.style.left=((_v.x+1)/2*100)+'%'; d.style.top=((1-_v.y)/2*100)+'%'; });
 }
 
 /* ---------------- 动画 ---------------- */
-let exp=0; const _w=new THREE.Vector3();
+let exp=0;
 function anim(dt){
   if(camAnim){ camAnim.t=Math.min(1,camAnim.t+dt/.9); const e=ease(camAnim.t); camera.position.lerpVectors(camAnim.p0,camAnim.p1,e); controls.target.lerpVectors(camAnim.t0,camAnim.t1,e); if(camAnim.t>=1) camAnim=null; }
   controls.update();
   exp+=((S.explode?1:0)-exp)*Math.min(1,dt*4);
-  const cfg=S.cfg, tasks=S.tasks, work=S.cphase==='WORK', ct=S.ct;
-  // 转台角度
-  const idx=S.cphase==='INDEX'?S.index+ease(ct/T.INDEX):S.index;
-  table.rotation.y=-idx*Math.PI/2;
-  // 载具上的条带
-  holders.forEach((h,i)=>{ const st=S.holders[i]; const vis=!!st&&st.placed&&!st.picked; h.strip.mesh.visible=vis; if(st&&st.texDirty){ paintStrip(h.strip,st.res); st.texDirty=false; } });
-  // 针头 Z 与 XY
-  let topY=TOP_UP, botY=BOT_DN, hx=0, hz=0;
+  const cfg=S.cfg, seg=S.segs?S.segs[S.si]:null, p=seg?S.pt/seg.d:0, ph=S.phase, inc=S.incoming;
+  // ---- 载具位置
+  let cx=EXCH.x, cz=EXCH.z;
+  if(seg){
+    if(ph==='EXCH'){ cx=EXCH.x; cz=EXCH.z; }
+    else if(ph==='IN'){ const q=ease(p); cx=lerp(EXCH.x,CAMX,q); cz=lerp(EXCH.z,PROBE.z,q); }
+    else if(ph==='ALIGN'){ cx=CAMX; cz=PROBE.z; }
+    else if(ph==='PROBE'&&inc){ const k=clamp(Math.floor(S.pt/TD),0,cfg.N-1), mc=microAt(S.pt); const c1=tdCenter(cfg,k), c0=k===0?{x:PROBE.x-CAMX,z:0}:tdCenter(cfg,k-1); const q=mc.name==='STEP'?ease(mc.p):1;
+      // 载具移动量 = −被测区域中心（让被测区域到针卡正下方）
+      cx=PROBE.x-lerp(c0.x,c1.x,q); cz=PROBE.z-lerp(c0.z,c1.z,q); }
+    else if(ph==='OUT'){ const last=tdCenter(cfg,cfg.N-1); const q=ease(p); cx=lerp(PROBE.x-last.x,EXCH.x,q); cz=lerp(PROBE.z-last.z,EXCH.z,q); }
+  } else if(S.clean){ cx=PROBE.x; cz=PROBE.z; }
+  xCar.position.x=cx; carrier.position.z=cz;
+  // 载具上的条带（换片时被下料吸头取走后隐藏）
+  const cs=S.carrier; carStrip.mesh.visible=!!cs&&cs.placed&&!(ph==='EXCH'&&seg&&cs.done&&S.pt>=.3); if(cs&&cs.texDirty){ paintStrip(carStrip,cs.res); cs.texDirty=false; } if(!cs&&carStrip.cur){ carStrip.cur=null; }
+  // ---- 针卡 Z
+  let topY=TOP_UP, botY=BOT_DN, swapZ=0;
   if(S.maint&&!S.clean&&!S.swap){ topY=TOP_SVC; botY=BOT_SVC; }
-  else if(S.swap){ const p=S.swap.t/S.swap.dur; const z=p<.4?ease(p/.4):p<.6?1:1-ease((p-.6)/.4); topY=lerp(TOP_SVC,TOP_SVC+12,z); botY=BOT_SVC; }
-  else if(S.clean){ const ph=(S.clean.t%2)/2; const z=ph<.3?ease(ph/.3):ph<.7?1:1-ease((ph-.7)/.3); topY=lerp(TOP_UP,TOP_DN,z); botY=lerp(BOT_DN,BOT_UP,z); }
-  else if(work&&tasks.test){
-    const st=tasks.test, k=clamp(Math.floor(ct/TD),0,cfg.N-1), mc=microAt(ct);
-    if(ct<cfg.N*TD){
-      if(mc.name==='DOWN'){ topY=lerp(TOP_UP,TOP_DN,ease(mc.p)); botY=lerp(BOT_DN,BOT_UP,ease(mc.p)); }
-      else if(mc.name==='SETTLE'||mc.name==='CONTACT'||mc.name==='TEST'){ topY=TOP_DN; botY=BOT_UP; }
-      else if(mc.name==='UP'){ topY=lerp(TOP_DN,TOP_UP,ease(mc.p)); botY=lerp(BOT_UP,BOT_DN,ease(mc.p)); }
-      // 针头 XY：把被测区域中心从条带局部坐标变换到世界坐标
-      const hg=holders[holderIdxAt(2)].grp; const c1=tdCenter(cfg,k), c0=tdCenter(cfg,Math.max(0,k-1));
-      const q=mc.name==='STEP'?ease(mc.p):1; const cx=lerp(c0.x,c1.x,q), cz=lerp(c0.z,c1.z,q);
-      _w.set(cx,0,cz); hg.localToWorld(_w); hx=_w.x-testW.x; hz=_w.z-testW.z;
-    }
-  }
-  xyTop.position.x=testW.x+hx; xyTop.position.z=testW.z+hz; xyBot.position.x=testW.x+hx; xyBot.position.z=testW.z+hz;
-  topHead.position.y=topY+exp*16; bottomHead.position.y=botY-exp*10; stripper.position.y=exp*-6;
-  // 清洁片
-  if(S.clean){ const hg=holders[holderIdxAt(2)].grp; if(cleanSheet.parent!==hg) hg.add(cleanSheet); cleanSheet.visible=true; } else cleanSheet.visible=false;
-  // 上料取放
-  let lx=-100, lz=loadW.z, lpad=0, tVis=false, tx=0, ty=0, tz=0;
-  if(work&&tasks.load){
-    const t=ct, st=tasks.load;
-    if(t<.6){ lx=magPos.in.x; lpad=ease(t<.3?t/.3:1-(t-.3)/.3)*11; }
-    else if(t<1.8){ const q=ease((t-.6)/1.2); lx=lerp(magPos.in.x,loadW.x,q); tVis=true; }
-    else if(t<2.4){ lx=loadW.x; lpad=ease((t-1.8)/.6)*5; tVis=!st.placed; }
-    else { lx=lerp(loadW.x,magPos.in.x,ease((t-2.4)/.6)); }
-    if(tVis){ tx=lx; ty=104-lpad-.6; tz=lz; }
-  }
-  carL.position.set(lx,0,lz); zL.position.y=118-lpad/2; zL.scale.y=1+lpad/28; padL.position.y=104-lpad;
-  transit.mesh.visible=tVis; if(tVis) transit.mesh.position.set(tx,ty,tz);
-  // 下料取放
-  let ux=-90, uz=unloadW.z, upad=0, uVis=false;
-  if(work&&tasks.unload){
-    const t=ct, st=tasks.unload; let p=0; for(let i=0;i<UNITS;i++) if(st.res[i]===2) p++; const dest=p/UNITS>=.97?magPos.ok:magPos.ng;
-    if(t<.6){ ux=unloadW.x; upad=ease(t<.3?t/.3:1-(t-.3)/.3)*5; uVis=st.picked; }
-    else if(t<2.0){ const q=ease((t-.6)/1.4); ux=lerp(unloadW.x,dest.x,q); uVis=true; }
-    else if(t<2.6){ ux=dest.x; upad=ease((t-2.0)/.6)*14; uVis=true; }
-    else { ux=lerp(dest.x,unloadW.x,ease((t-2.6)/.4)); }
-    if(uVis){ transitU.mesh.position.set(ux,104-upad-.6,uz); if(transitU.cur!==st){ transitU.cur=st; paintStrip(transitU,st.res); } }
-  }
-  carU.position.set(ux,0,uz); zU.position.y=118-upad/2; zU.scale.y=1+upad/28; padU.position.y=104-upad;
+  else if(S.swap){ const q=S.swap.t/S.swap.dur; topY=TOP_SVC; botY=BOT_SVC; swapZ=(q<.35?ease(q/.35):q<.65?1:1-ease((q-.65)/.35))*40; }
+  else if(S.clean){ const t=(S.clean.t%2)/2; const z=t<.3?ease(t/.3):t<.7?1:1-ease((t-.7)/.3); topY=lerp(TOP_UP,TOP_DN,z); botY=lerp(BOT_DN,BOT_UP,z); }
+  else if(seg&&ph==='PROBE'){ const mc=microAt(S.pt);
+    if(mc.name==='DOWN'){ topY=lerp(TOP_UP,TOP_DN,ease(mc.p)); botY=lerp(BOT_DN,BOT_UP,ease(mc.p)); }
+    else if(mc.name==='SETTLE'||mc.name==='CONTACT'||mc.name==='TEST'){ topY=TOP_DN; botY=BOT_UP; }
+    else if(mc.name==='UP'){ topY=lerp(TOP_DN,TOP_UP,ease(mc.p)); botY=lerp(BOT_UP,BOT_DN,ease(mc.p)); } }
+  topUnit.position.y=145+topY+exp*14; botUnit.position.y=40+botY-exp*10; stripper.position.y=exp*-4; topCard.position.z=swapZ; topCard.position.y=-38+exp*6; botCard.position.y=38-exp*6;
+  cleanSheet.visible=!!S.clean;
+  // ---- 上料取放（换片 1.5–3.5）
+  let lx=magPos.in.x, lpad=0, tVis=false;
+  if(seg&&ph==='EXCH'&&inc){ const t=S.pt;
+    if(t<1.5){ lx=magPos.in.x; lpad=t>.9?ease(Math.min(1,(t-.9)/.3))*(t<1.2?1:1-ease((t-1.2)/.3))*11:0; }
+    else if(t<2.9){ const q=ease((t-1.5)/1.4); lx=lerp(magPos.in.x,EXCH.x,q); tVis=true; }
+    else if(t<3.5){ lx=EXCH.x; lpad=ease((t-2.9)/.6)*3.4; tVis=!inc.placed; }
+    else { lx=lerp(EXCH.x,magPos.in.x,ease((t-3.5)/.5)); }
+    if(tVis){ transit.mesh.position.set(lx,104-lpad-.6,LINE_Z); if(transit.cur!==inc){ transit.cur=inc; paintStrip(transit,null); } } }
+  carL.position.x=lx; zL.position.y=118-lpad/2; zL.scale.y=1+lpad/28; padL.position.y=104-lpad;
+  transit.mesh.visible=tVis;
+  // ---- 下料取放（换片 0–3.4）
+  let ux=EXCH.x, upad=0, uVis=false;
+  const og=S.outgoing;
+  if(seg&&ph==='EXCH'&&(og||(S.carrier&&S.carrier.done&&S.pt<.6))){ const t=S.pt, st=og||S.carrier; const dest=stripIsOk(st)?magPos.ok:magPos.ng;
+    if(t<.6){ ux=EXCH.x; upad=ease(t<.3?t/.3:1-(t-.3)/.3)*3.4; uVis=t>=.3; }
+    else if(t<2.4){ const q=ease((t-.6)/1.8); ux=lerp(EXCH.x,dest.x,q); uVis=true; }
+    else if(t<3.4){ ux=dest.x; upad=ease((t-2.4)/1)*11; uVis=true; }
+    if(uVis){ transitU.mesh.position.set(ux,104-upad-.6,LINE_Z); if(transitU.cur!==st){ transitU.cur=st; paintStrip(transitU,st.res); } } }
+  else if(seg&&ph!=='EXCH'){ ux=EXCH.x; }
+  carU.position.x=ux; zU.position.y=121-upad/2; zU.scale.y=1+upad/34; padU.position.y=104-upad;
   transitU.mesh.visible=uVis;
-  // 对位环形光 / 读码器
-  M.ring.emissiveIntensity=(work&&tasks.align&&ct<T.ALIGN)?.5+.5*Math.abs(Math.sin(ct*Math.PI*3)):.1;
-  M.reader.emissiveIntensity=(work&&tasks.load&&ct>.9&&ct<1.3)?1.2:.1;
-  // 防护门
+  // ---- 环形光 / 读码器
+  M.ring.emissiveIntensity=(seg&&ph==='ALIGN')?.5+.5*Math.abs(Math.sin(S.pt*Math.PI*3)):.1;
+  M.reader.emissiveIntensity=(seg&&ph==='EXCH'&&S.pt>2.3&&S.pt<2.7)?1.2:.1;
+  // ---- 防护门 / 灯 / 料盒 / EVA
   const doorT=S.maint?1:0; doorL.rotation.y+=((-doorT*1.9)-doorL.rotation.y)*Math.min(1,dt*3); doorR.rotation.y+=((doorT*1.9)-doorR.rotation.y)*Math.min(1,dt*3);
-  // 灯
-  const st=S.alarm?'alarm':(S.maint||S.clean||S.swap||S.cphase==='WAIT'||!S.running)?'wait':'run';
+  const st=S.alarm?'alarm':(S.maint||S.clean||S.swap||S.phase==='WAIT'||!S.running)?'wait':'run';
   const bl=.55+.45*Math.sin(performance.now()/180);
   M.lampG.emissiveIntensity=st==='run'?1:0; M.lampY.emissiveIntensity=st==='wait'?1:0; M.lampR.emissiveIntensity=st==='alarm'?bl:0;
-  // 料盒
   fillStack(inStack,S.input,magPos.in); fillStack(okStack,S.ok,magPos.ok); fillStack(ngStack,S.ng,magPos.ng);
-  eva2.visible=cfg.ch===512; eva1.position.x=cfg.ch===512?72:90;
-  // AGV
+  eva2.visible=cfg.ch===512; eva1.position.x=cfg.ch===512?72:90; botHead.visible=cfg.ch===512; cableBot.visible=cfg.ch===512;
   S.agv+=((S.agvOn?1:0)-S.agv)*Math.min(1,dt*.8); agv.visible=S.agv>.01; agv.position.x=lerp(-230,-166,ease(S.agv));
-  // 维护项高亮脉冲
   if(maintHover&&PARTS[maintHover]){ const k=.25+.25*Math.sin(performance.now()/160); for(const m of PARTS[maintHover].meshes){ if(m.material.userData&&m.material.userData.base) m.material.emissiveIntensity=k; } }
   updateLabels();
   renderer.render(scene,camera);
 }
 
 /* ---------------- 面板：节拍泳道 ---------------- */
-function cycleLen(){ return S.cfg.N*TD+T.INDEX; }
 function buildTakt(){
-  const cfg=S.cfg, probe=cfg.N*TD, total=cycleLen();
+  const cfg=S.cfg, total=cycleLen();
   $('taktTotal').textContent=total.toFixed(1)+' s'; $('taktUph').textContent=(3600/total).toFixed(0); $('taktN').textContent=cfg.N; $('kUphT').textContent=(3600/total).toFixed(0);
   const L=$('lanes'); L.innerHTML='';
-  for(const s of STN){ const d=s.k==='test'?probe:s.d; const ln=document.createElement('div'); ln.className='ln'; ln.textContent=s.n; L.appendChild(ln);
-    const bar=document.createElement('div'); bar.className='bar'; bar.dataset.k=s.k;
-    bar.innerHTML=`<div class="sg" style="flex:${d} 0 0;background:var(${s.c})">${s.n} ${d.toFixed(1)} s</div><div class="sg" style="flex:${probe-d} 0 0;background:transparent"></div><div class="sg" data-k="index" style="flex:${T.INDEX} 0 0;background:var(--s3)">转位</div>`;
-    L.appendChild(bar); }
+  const segs=SEGS(cfg);
+  const mk=(name,html)=>{ const ln=document.createElement('div'); ln.className='ln'; ln.textContent=name; L.appendChild(ln); const bar=document.createElement('div'); bar.className='bar'; bar.innerHTML=html; L.appendChild(bar); };
+  mk('载具 / 针卡', segs.map(s=>`<div class="sg" data-k="${s.k}" style="flex:${s.d} 0 0;background:var(${s.c})">${s.n} ${s.d.toFixed(1)} s</div>`).join(''));
+  mk('下料取放', `<div class="sg" data-k="UNL" style="flex:3.4 0 0;background:var(--s5)">取片 → 分选入盒 3.4 s</div><div class="sg" style="flex:${total-3.4} 0 0;background:transparent"></div>`);
+  mk('上料取放', `<div class="sg" style="flex:1.5 0 0;background:transparent"></div><div class="sg" data-k="LD" style="flex:2.5 0 0;background:var(--s1)">取片 · 读码 · 放片</div><div class="sg" style="flex:${total-4} 0 0;background:transparent"></div>`);
   const ph=document.createElement('div'); ph.className='ph'; ph.id='lanePh'; L.appendChild(ph);
-  $('taktLegend').innerHTML=STN.map(s=>`<span><i style="background:var(${s.c})"></i>${s.n}</span>`).join('')+`<span><i style="background:var(--s3)"></i>转位</span>`;
+  $('taktLegend').innerHTML=`<span><i style="background:var(--s1)"></i>换片 / 上料</span><span><i style="background:var(--s3)"></i>进出</span><span><i style="background:var(--s2)"></i>对位</span><span><i style="background:var(--s4)"></i>扎针</span><span><i style="background:var(--s5)"></i>下料</span>`;
   const mi=$('microBar'); mi.innerHTML='';
   for(const [k,n,d,c] of MICRO){ const s=document.createElement('div'); s.className='sg'; s.dataset.k=k; s.style.flex=`${d} 0 0`; s.style.background=`var(${c})`; s.textContent=`${n} ${d} s`; mi.appendChild(s); }
 }
 function updateTakt(){
-  const total=cycleLen(), probe=S.cfg.N*TD; let el=0;
-  if(S.cphase==='WORK') el=S.ct*(probe/Math.max(S.cdur,1e-6)); else if(S.cphase==='INDEX') el=probe+S.ct;
-  const ph=$('lanePh'); if(ph){ const L=$('lanes'); const first=L.querySelector('.bar'); if(first){ const l0=first.offsetLeft, w=first.offsetWidth; ph.style.left=(l0+clamp(el/total,0,1)*w)+'px'; } }
-  const mc=(S.cphase==='WORK'&&S.tasks&&S.tasks.test&&S.ct<probe)?microAt(S.ct).name:null;
+  const total=cycleLen(); const el=S.segs?S.ct:0;
+  const ph=$('lanePh'); if(ph){ const first=$('lanes').querySelector('.bar'); if(first){ ph.style.left=(first.offsetLeft+clamp(el/total,0,1)*first.offsetWidth)+'px'; } }
+  const mc=(S.phase==='PROBE'&&S.segs)?microAt(S.pt).name:null;
   document.querySelectorAll('#microBar .sg').forEach(s=>s.classList.toggle('dim',!!mc&&s.dataset.k!==mc));
-  document.querySelectorAll('#lanes .bar').forEach(b=>{ const active=S.cphase==='WORK'&&S.tasks&&S.tasks[b.dataset.k]; b.querySelector('.sg').classList.toggle('dim',S.cphase==='WORK'&&!active); });
+  document.querySelectorAll('#lanes .sg[data-k]').forEach(s=>{ const k=s.dataset.k; let on=true; if(S.segs){ on=k===S.phase||(k==='UNL'&&S.phase==='EXCH'&&S.pt<3.4&&(S.outgoing||(S.carrier&&S.carrier.done)))||(k==='LD'&&S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming); } s.classList.toggle('dim',!!S.segs&&!on); });
 }
 
 /* ---------------- 面板：Map ---------------- */
@@ -948,17 +950,18 @@ const mapSvg=$('map'); const mapCells=[];
   for(let i=0;i<UNITS;i++){ const c=Math.floor(i/ROWS), r=i%ROWS; const el=document.createElementNS(ns,'rect'); el.setAttribute('x',1+c*12); el.setAttribute('y',1+r*12); el.setAttribute('width',10); el.setAttribute('height',10); el.setAttribute('rx',1); el.dataset.i=i; el.setAttribute('fill','var(--surface-2)'); el.setAttribute('stroke','var(--line)'); el.setAttribute('stroke-width','.5'); mapSvg.appendChild(el); mapCells.push(el); }
   const fr=document.createElementNS(ns,'rect'); fr.id='mapFrame'; fr.setAttribute('fill','none'); fr.setAttribute('stroke','var(--ink)'); fr.setAttribute('stroke-width','1.5'); fr.setAttribute('rx','2'); fr.hidden=true; mapSvg.appendChild(fr); })();
 const FILL=['var(--surface-2)','var(--accent)','var(--good)','var(--crit)'];
+function mapStrip(){ return S.carrier||S.incoming||null; }
 function updateMap(){
-  const st=S.testStrip;
+  const st=mapStrip();
   for(let i=0;i<UNITS;i++){ const s=st?st.res[i]:0; mapCells[i].setAttribute('fill',FILL[s]); mapCells[i].setAttribute('stroke',s?'none':'var(--line)'); }
   const fr=$('mapFrame');
-  if(st&&st.k>=0&&S.cphase==='WORK'&&S.tasks&&S.tasks.test===st){ const u=tdUnits(S.cfg,st.k); const c0=Math.floor(u[0]/ROWS), c1=Math.floor(u[u.length-1]/ROWS), r0=u[0]%ROWS, r1=u[u.length-1]%ROWS; fr.hidden=false; fr.setAttribute('x',c0*12); fr.setAttribute('y',r0*12); fr.setAttribute('width',(c1-c0+1)*12); fr.setAttribute('height',(r1-r0+1)*12); } else fr.hidden=true;
+  if(st&&st.k>=0&&S.phase==='PROBE'){ const u=tdUnits(S.cfg,st.k); const c0=Math.floor(u[0]/ROWS), c1=Math.floor(u[u.length-1]/ROWS), r0=u[0]%ROWS, r1=u[u.length-1]%ROWS; fr.hidden=false; fr.setAttribute('x',c0*12); fr.setAttribute('y',r0*12); fr.setAttribute('width',(c1-c0+1)*12); fr.setAttribute('height',(r1-r0+1)*12); } else fr.hidden=true;
 }
 const tip=$('tip');
 function showTip(ev,html){ tip.innerHTML=html; tip.style.display='block'; const w=tip.offsetWidth; let x=ev.clientX+12; if(x+w>innerWidth-8) x=ev.clientX-w-12; tip.style.left=x+'px'; tip.style.top=(ev.clientY-30)+'px'; }
 function hideTip(){ tip.style.display='none'; }
 const BINN={1:'合格',2:'VF 失效',3:'IGSS 失效',4:'VS1S2 失效',5:'接触不良'};
-mapSvg.addEventListener('pointermove',ev=>{ const t=ev.target, st=S.testStrip; if(!t.dataset||t.dataset.i==null||!st){ hideTip(); return; } const i=+t.dataset.i, s=st.res[i], c=Math.floor(i/ROWS)+1, r=i%ROWS+1; let h=`C${c} R${r} · `;
+mapSvg.addEventListener('pointermove',ev=>{ const t=ev.target, st=mapStrip(); if(!t.dataset||t.dataset.i==null||!st){ hideTip(); return; } const i=+t.dataset.i, s=st.res[i], c=Math.floor(i/ROWS)+1, r=i%ROWS+1; let h=`C${c} R${r} · `;
   if(s===0) h+='待测'; else if(s===1) h+='测试中'; else { const b=st.bin[i]; h+=BINN[b]; if(b!==5) h+=`<br><span class="m">VF ${st.vals[i*3].toFixed(3)} V · IGSS ${st.vals[i*3+1].toFixed(1)} nA · VS1S2 ${st.vals[i*3+2].toFixed(2)} mV</span>`; } showTip(ev,h); });
 mapSvg.addEventListener('pointerleave',hideTip);
 
@@ -1007,16 +1010,20 @@ function updateMeas(){
 }
 
 /* ---------------- 面板：物料流 / 工位 ---------------- */
-const FLOW=[['inMag','上料盒','升降式，25 条/盒；AGV 可换盒',()=>S.input,'load'],['reader','取放 · 读码','X/Z 真空吸头，途中全幅读 2D 码',()=>S.tasks&&S.tasks.load?1:0,'load'],['align','对位工位','Top 面 Mark，偏差送 XY 步进台',()=>S.tasks&&S.tasks.align?1:0,'align'],['test','测试工位','双面同时扎针，1.2 s/次',()=>S.tasks&&S.tasks.test?1:0,'test'],['unload','排出 · 分选','良率 ≥ 97% → OK 盒',()=>S.tasks&&S.tasks.unload?1:0,'unload'],['out','OK / NG 料盒','Map 上传 CIM V5.0',()=>`${S.ok} / ${S.ng}`,'']];
+const FLOW=[['inMag','上料盒','升降式，25 条/盒；AGV 可换盒',()=>S.input,()=>S.phase==='EXCH'&&S.pt<1.5&&!!S.incoming],['reader','上料取放 · 读码','X/Z 真空吸头，途中读 2D 码',()=>S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming?1:0,()=>S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming],['xy','换片位 → 针卡下方','长行程 X 轴，1 s',()=>S.phase==='IN'||S.phase==='OUT'?1:0,()=>S.phase==='IN'||S.phase==='OUT'],['align','对位','Top 面 Mark，XYθ 补偿',()=>S.phase==='ALIGN'?1:0,()=>S.phase==='ALIGN'],['test','扎针测试','双面同时，1.2 s/次',()=>S.phase==='PROBE'?1:0,()=>S.phase==='PROBE'],['unload','下料取放 · 分选','良率 ≥ 97% → OK 盒',()=>S.outgoing?1:0,()=>!!S.outgoing],['out','OK / NG 料盒','Map 上传 CIM V5.0',()=>`${S.ok} / ${S.ng}`,()=>false]];
 function buildFlow(){ const f=$('flow'); f.innerHTML=''; FLOW.forEach((r,i)=>{ if(i){ const a=document.createElement('div'); a.className='arrow'; a.textContent='↓'; f.appendChild(a);} const d=document.createElement('div'); d.className='flowrow'; d.id='fl-'+r[0]; d.innerHTML=`<div><div class="n">${r[1]}</div><div class="d">${r[2]}</div></div><div class="c mono"></div>`; f.appendChild(d); }); }
-function updateFlow(){ FLOW.forEach(r=>{ const d=$('fl-'+r[0]); d.classList.toggle('on',S.cphase==='WORK'&&!!S.tasks&&!!S.tasks[r[4]]); d.querySelector('.c').textContent=r[3](); }); }
-function buildStations(){ const el=$('stations'); el.innerHTML=STN.map(s=>`<div class="stn" id="stn-${s.k}"><div class="n">${s.n}</div><div class="id mono">—</div><div class="st">空</div><div class="progress"><i style="width:0%"></i></div></div>`).join(''); }
+function updateFlow(){ FLOW.forEach(r=>{ const d=$('fl-'+r[0]); d.classList.toggle('on',!!S.segs&&r[4]()); d.querySelector('.c').textContent=r[3](); }); }
+const STATS=[{k:'load',n:'上料取放'},{k:'carrier',n:'载具'},{k:'probe',n:'针卡'},{k:'unload',n:'下料取放'}];
+function buildStations(){ $('stations').innerHTML=STATS.map(s=>`<div class="stn" id="stn-${s.k}"><div class="n">${s.n}</div><div class="id mono">—</div><div class="st">空闲</div><div class="progress"><i style="width:0%"></i></div></div>`).join(''); }
 function updateStations(){
-  STN.forEach((s,i)=>{ const d=$('stn-'+s.k), st=holderAt(i), active=S.cphase==='WORK'&&S.tasks&&S.tasks[s.k];
-    d.classList.toggle('on',!!active); d.querySelector('.id').textContent=st?st.id.slice(-9):'—';
-    let txt='空', pr=0;
-    if(st){ if(S.cphase==='INDEX') txt='转位中'; else if(active){ const dur=s.k==='test'?S.cfg.N*TD:s.d; pr=clamp(S.ct/dur,0,1); txt=s.k==='test'?`第 ${clamp(Math.floor(S.ct/TD)+1,1,S.cfg.N)}/${S.cfg.N} 次`:s.k==='load'?(S.ct<1.8?'取片 · 读码':'放片'):s.k==='align'?'相机取像':(S.ct<2?'取片':'入盒'); } else txt='就绪'; }
-    d.querySelector('.st').textContent=txt; d.querySelector('.progress i').style.width=(pr*100)+'%'; });
+  const inc=S.incoming, ex=S.phase==='EXCH'&&S.segs;
+  const set=(k,id,txt,pr,on)=>{ const d=$('stn-'+k); d.classList.toggle('on',!!on); d.querySelector('.id').textContent=id||'—'; d.querySelector('.st').textContent=txt; d.querySelector('.progress i').style.width=(clamp(pr,0,1)*100)+'%'; };
+  const ldOn=ex&&inc&&S.pt>=1.5&&S.pt<4; set('load', ldOn?inc.id.slice(-9):'', ldOn?(S.pt<2.9?'取片 · 读码':'放片'):'空闲', ldOn?(S.pt-1.5)/2.5:0, ldOn);
+  const cs=S.carrier||(S.phase!=='EXCH'?inc:null); let ct='空闲', cp=0;
+  if(S.segs&&inc){ const total=cycleLen(); cp=S.ct/total; ct=PHASE_CN[S.phase]; if(S.phase==='PROBE') ct=`扎针 ${clamp(Math.floor(S.pt/TD)+1,1,S.cfg.N)}/${S.cfg.N}`; }
+  set('carrier', cs?cs.id.slice(-9):'', ct, cp, !!S.segs&&!!inc);
+  const pOn=S.phase==='PROBE'; set('probe', pOn?inc.id.slice(-9):'', pOn?MICRO_CN[microAt(S.pt).name]:(S.phase==='ALIGN'?'相机对位':'抬起待命'), pOn?S.pt/(S.cfg.N*TD):0, pOn);
+  const og=S.outgoing; set('unload', og?og.id.slice(-9):'', og?(S.pt<2.4?'送往料盒':'入盒'):'空闲', og?(S.pt)/3.4:0, !!og);
 }
 
 /* ---------------- 面板：维护 ---------------- */
@@ -1030,8 +1037,8 @@ function buildMaint(){
     l.appendChild(d); }
   l.addEventListener('click',ev=>{ const b=ev.target.closest('button[data-act]'); if(!b) return; const it=S.maintItems.find(x=>x.id===b.dataset.act);
     if(it.id==='cln'||it.id==='top'||it.id==='bot'){ if(!S.maint){ log(`${it.act} 需先进入维护模式`,'w'); return; } }
-    if(it.id==='cln'){ S.clean={t:0,dur:6}; log('开始针尖清洁：测试工位放清洁片，双面各扎 3 次'); it.used=0; setView('station'); return; }
-    if(it.id==='top'){ S.swap={t:0,dur:4}; log('一键换针头：快换座解锁，取下旧针头，装入新针头'); it.used=0; setView('top'); return; }
+    if(it.id==='cln'){ S.clean={t:0,dur:6}; log('开始针尖清洁：载具放清洁片移到针卡下方，上下各扎 3 次'); it.used=0; setView('station'); return; }
+    if(it.id==='top'){ S.swap={t:0,dur:6}; log('更换上针卡：卡座解锁，针卡从前门抽出，换新卡插回'); it.used=0; setView('topcard'); return; }
     it.used=0; log(`${it.name}：${it.act}，寿命计数清零`,'ok'); });
 }
 function updateMaint(){
@@ -1045,53 +1052,51 @@ function updateMaint(){
 let uiAcc=0;
 function updateUI(dt){
   uiAcc+=dt; if(uiAcc<.1) return; uiAcc=0;
-  const st=S.testStrip, tasks=S.tasks;
-  const phaseKey=S.alarm?'ALARM':S.clean?'CLEAN':S.swap?'SWAP':S.maint?'MAINT':S.cphase;
-  let lines=[`<div>周期 <b>${PHASE_CN[phaseKey]||phaseKey}</b>${S.cphase==='WORK'||S.cphase==='INDEX'?` · <span class="mono">${S.ct.toFixed(1)} / ${S.cdur.toFixed(1)} s</span>`:''}</div>`];
-  if(S.cphase==='WORK'&&tasks){ const parts=[];
-    if(tasks.load) parts.push(`投入 ${tasks.load.id.slice(-4)}`); if(tasks.align) parts.push(`对位 ${tasks.align.id.slice(-4)}`);
-    if(tasks.test&&S.ct<S.cfg.N*TD){ const mc=microAt(S.ct); parts.push(`测试 ${tasks.test.id.slice(-4)} 第 ${clamp(Math.floor(S.ct/TD)+1,1,S.cfg.N)}/${S.cfg.N} 次 · ${MICRO_CN[mc.name]}`); }
-    if(tasks.unload) parts.push(`排出 ${tasks.unload.id.slice(-4)}`); lines.push(`<div class="hint">${parts.join(' · ')}</div>`); }
+  const st=mapStrip(), inc=S.incoming;
+  const phaseKey=S.alarm?'ALARM':S.clean?'CLEAN':S.swap?'SWAP':S.maint?'MAINT':S.phase;
+  let lines=[`<div>工序 <b>${PHASE_CN[phaseKey]||phaseKey}</b>${S.segs?` · <span class="mono">${S.ct.toFixed(1)} / ${cycleLen().toFixed(1)} s</span>`:''}</div>`];
+  if(S.segs){ const parts=[]; if(inc) parts.push(`载具 ${inc.id.slice(-4)}`); if(S.phase==='PROBE'&&inc){ const mc=microAt(S.pt); parts.push(`第 ${clamp(Math.floor(S.pt/TD)+1,1,S.cfg.N)}/${S.cfg.N} 次 · ${MICRO_CN[mc.name]}`); } if(S.outgoing) parts.push(`下料 ${S.outgoing.id.slice(-4)}`); if(inc&&inc.align&&S.phase==='PROBE'&&S.pt<2) parts.push(`对位偏差 ${inc.align.dx}/${inc.align.dy} µm, ${inc.align.th}°`); if(parts.length) lines.push(`<div class="hint">${parts.join(' · ')}</div>`); }
   $('phasebox').innerHTML=lines.join('');
   $('clock').textContent='演示时间 '+hms(S.simTime);
-  const tw=$('tower'); const sst=S.alarm?'alarm':(S.maint||S.clean||S.swap||S.cphase==='WAIT'||!S.running)?'wait':'run'; tw.className='tower '+sst;
-  $('towerTxt').textContent=S.alarm?'报警 '+S.alarm.code:S.clean?'清洁中':S.swap?'换针头':S.maint?'维护模式':S.cphase==='WAIT'?'待料':S.running?'运行中':'待机';
+  const tw=$('tower'); const sst=S.alarm?'alarm':(S.maint||S.clean||S.swap||S.phase==='WAIT'||!S.running)?'wait':'run'; tw.className='tower '+sst;
+  $('towerTxt').textContent=S.alarm?'报警 '+S.alarm.code:S.clean?'清洁中':S.swap?'换针卡':S.maint?'维护模式':S.phase==='WAIT'?'待料':S.running?'运行中':'待机';
   const uph=S.cycles.length?3600/(S.cycles.reduce((a,b)=>a+b,0)/S.cycles.length):NaN;
   $('kUph').textContent=Number.isFinite(uph)?uph.toFixed(0):'—';
   $('kStrips').textContent=fmt(S.strips); $('kUnits').textContent=fmt(S.units); $('kYield').innerHTML=(S.units?(S.pass/S.units*100).toFixed(2):'—')+'<span class="u">%</span>';
   $('cId').textContent=st?st.id:'—'; $('cTd').textContent=st?`${st.tdDone} / ${S.cfg.N}`:`0 / ${S.cfg.N}`;
   if(st){ let p=0,d=0; for(let i=0;i<UNITS;i++){ if(st.res[i]>=2) d++; if(st.res[i]===2) p++; } $('cYield').textContent=d?`${(p/d*100).toFixed(2)}%（已测 ${d}）`:'—'; } else $('cYield').textContent='—';
   updateStations();
-  if(mapDirty){ updateMap(); mapDirty=false; } if(yieldDirty){ drawYield(); yieldDirty=false; }
-  if(S.tab==='mat'){ updateFlow(); $('mIn').textContent=S.input; $('mInBar').style.width=(S.input/25*100)+'%'; $('mOk').textContent=S.ok; $('mNg').textContent=S.ng; $('lotProg').textContent=`${S.planned} / ${S.strips}`; const left=Math.max(0,S.planned-S.strips); $('lotEta').textContent=left?hms(left*cycleLen()+3*cycleLen()):'已完成'; }
-  if(S.tab==='test'){ const k=st&&S.cphase==='WORK'&&tasks&&tasks.test===st?st.k:null; $('tTd').textContent=k!=null&&k>=0?`第 ${k+1} / ${S.cfg.N} 次`:'—'; $('tCover').textContent=k!=null&&k>=0?`${S.cfg.cover(k)} · ${S.cfg.perTd} 单元`:'—';
-    $('tCh').textContent=k!=null&&k>=0?`${S.cfg.perTd*8} / ${S.cfg.ch}（每单元 8 ch）`:`— / ${S.cfg.ch}`; $('tSense').textContent=k!=null&&k>=0?`${S.cfg.perTd*4} 路 → INA ×100 → 3:1 复用 → DGT`:'—';
+  if(mapDirty||S.phase==='PROBE'){ updateMap(); mapDirty=false; } if(yieldDirty){ drawYield(); yieldDirty=false; }
+  if(S.tab==='mat'){ updateFlow(); $('mIn').textContent=S.input; $('mInBar').style.width=(S.input/25*100)+'%'; $('mOk').textContent=S.ok; $('mNg').textContent=S.ng; $('lotProg').textContent=`${S.planned} / ${S.strips}`; const left=Math.max(0,S.planned-S.strips); $('lotEta').textContent=left?hms(left*cycleLen()+4):'已完成'; }
+  if(S.tab==='test'){ const k=inc&&S.phase==='PROBE'?inc.k:null; const ok=k!=null&&k>=0; $('tTd').textContent=ok?`第 ${k+1} / ${S.cfg.N} 次`:'—'; $('tCover').textContent=ok?`${S.cfg.cover(k)} · ${S.cfg.perTd} 单元`:'—';
+    $('tCh').textContent=ok?`${S.cfg.perTd*8} / ${S.cfg.ch}（每单元 8 ch）`:`— / ${S.cfg.ch}`; $('tSense').textContent=ok?`${S.cfg.perTd*4} 路 → INA ×100 → 3:1 复用 → DGT`:'—';
     if(measDirty){ updateMeas(); measDirty=false; } if(histDirty){ drawHist(); histDirty=false; } }
   if(S.tab==='maint') updateMaint();
   updateTakt();
 }
 
 /* ---------------- 交互 ---------------- */
-function setRunning(on){ S.running=on; $('btnRun').textContent=on?'❙❙ 暂停':'▶ 开始'; $('btnRun').classList.toggle('primary',!on); log(on?'设备启动，转台自动运行':'暂停：当前周期停止，EVA100 保持待命'); }
+function setRunning(on){ S.running=on; $('btnRun').textContent=on?'❙❙ 暂停':'▶ 开始'; $('btnRun').classList.toggle('primary',!on); log(on?'设备启动，自动运行':'暂停：当前工序停止，EVA100 保持待命'); }
 $('btnRun').addEventListener('click',()=>{ if(S.alarm){ log('存在未复位报警，无法启动','e'); return; } if(S.maint){ log('维护模式中，先退出维护模式','w'); return; } setRunning(!S.running); });
-function resetAll(){ S.running=false; S.cphase='IDLE'; S.ct=0; S.cdur=0; S.tasks=null; S.events=[]; S.index=0; S.holders=[null,null,null,null]; S.testStrip=null; S.alarm=null; S.maint=false; S.maintPending=false; S.clean=null; S.swap=null; S.simTime=0; S.seq=0; S.input=25; S.ok=0; S.ng=0; S.strips=0; S.units=0; S.pass=0; S.fail=0; S.cycles=[]; S.yields=[]; S.lastDone=null; S.hist.fill(0); S.lastMeas=[]; transitU.cur=null;
-  mapDirty=measDirty=histDirty=yieldDirty=true; $('btnRun').textContent='▶ 开始'; $('btnRun').classList.add('primary'); $('btnMaint').textContent='进入维护模式'; $('btnAck').disabled=true; logEl.innerHTML=''; log('整机复位：转台回原点，载具清空，计数清零'); }
+function clearLine(){ S.segs=null; S.si=0; S.pt=0; S.ct=0; S.events=[]; S.phase='IDLE'; S.carrier=null; S.incoming=null; S.outgoing=null; transit.cur=null; transitU.cur=null; }
+function resetAll(){ S.running=false; clearLine(); S.alarm=null; S.maint=false; S.maintPending=false; S.clean=null; S.swap=null; S.simTime=0; S.seq=0; S.input=25; S.ok=0; S.ng=0; S.strips=0; S.units=0; S.pass=0; S.fail=0; S.cycles=[]; S.yields=[]; S.lastDone=null; S.hist.fill(0); S.lastMeas=[];
+  mapDirty=measDirty=histDirty=yieldDirty=true; $('btnRun').textContent='▶ 开始'; $('btnRun').classList.add('primary'); $('btnMaint').textContent='进入维护模式'; $('btnAck').disabled=true; logEl.innerHTML=''; log('整机复位：载具回换片位，计数清零'); }
 $('btnReset').addEventListener('click',resetAll);
 $('speed').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.speed=+b.dataset.s; document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('on',x===b)); });
-$('cfg').addEventListener('change',ev=>{ const was=S.cfg; S.cfg=CONFIGS[+ev.target.value]; if(S.cphase==='WORK'||S.holders.some(Boolean)){ log(`配置切换到 ${S.cfg.name}，清空转台上的条带（退回上料盒）`,'w'); S.input+=S.holders.filter(Boolean).length; S.holders=[null,null,null,null]; S.testStrip=null; S.tasks=null; S.events=[]; S.cphase='IDLE'; S.lastDone=null; S.cycles=[]; mapDirty=true; } else log(`配置切换到 ${S.cfg.name}`); buildTakt(); });
+$('cfg').addEventListener('change',ev=>{ S.cfg=CONFIGS[+ev.target.value]; if(S.segs||S.carrier){ const n=(S.carrier?1:0)+(S.incoming&&S.incoming!==S.carrier?1:0); S.input+=n; clearLine(); S.cycles=[]; S.lastDone=null; mapDirty=true; log(`配置切换到 ${S.cfg.name}，载具上的条带退回上料盒`,'w'); } else log(`配置切换到 ${S.cfg.name}`); buildTakt(); });
 $('views').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(b) setView(b.dataset.v); });
 $('btnGhost').addEventListener('click',()=>setGhost(!S.ghost));
 $('btnExplode').addEventListener('click',()=>{ S.explode=!S.explode; $('btnExplode').classList.toggle('on',S.explode); if(S.explode&&S.view!=='section') setView('section'); });
 document.querySelector('.tabs').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.tab=b.dataset.t; document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); for(const t of ['run','mat','test','maint','cmp']) $('tab-'+t).hidden=t!==S.tab;
-  measDirty=histDirty=true; const vmap={run:'table',mat:'lul',test:'section',maint:'station',cmp:'overview'}; setView(vmap[S.tab]); if(S.tab!=='test'&&S.explode){ S.explode=false; $('btnExplode').classList.remove('on'); } uiAcc=1; });
-$('btnRefill').addEventListener('click',()=>{ S.input=Math.min(40,S.input+25); S.planned+=25; if(S.cphase==='WAIT') S.cphase='IDLE'; log('上料盒补料 +25 条','ok'); });
+  measDirty=histDirty=true; const vmap={run:'inside',mat:'lul',test:'section',maint:'station',cmp:'overview'}; setView(vmap[S.tab]); if(S.tab!=='test'&&S.explode){ S.explode=false; $('btnExplode').classList.remove('on'); } uiAcc=1; });
+$('btnRefill').addEventListener('click',()=>{ S.input=Math.min(40,S.input+25); S.planned+=25; if(S.phase==='WAIT') S.phase='IDLE'; log('上料盒补料 +25 条','ok'); });
 $('btnEmptyOut').addEventListener('click',()=>{ log(`下料盒清空：OK ${S.ok} 条、NG ${S.ng} 条转入下道工序`); S.ok=0; S.ng=0; });
 $('btnAgv').addEventListener('click',()=>{ S.agvOn=!S.agvOn; $('btnAgv').classList.toggle('on',S.agvOn); log(S.agvOn?'AGV 到位，对接料盒舱（选配演示）':'AGV 离开'); if(S.agvOn) setView('lul'); });
-function enterMaint(){ S.maint=true; S.maintPending=false; S.running=false; $('btnRun').textContent='▶ 开始'; $('btnRun').classList.add('primary'); $('btnMaint').textContent='退出维护模式'; log('进入维护模式：针头退到维护位，防护门解锁，转台与 Z 轴使能断开','w'); setView('station'); }
+function enterMaint(){ S.maint=true; S.maintPending=false; S.running=false; $('btnRun').textContent='▶ 开始'; $('btnRun').classList.add('primary'); $('btnMaint').textContent='退出维护模式'; log('进入维护模式：针卡退到维护位，防护门解锁，XY 台与 Z 轴使能断开','w'); setView('station'); }
 $('btnMaint').addEventListener('click',()=>{ if(S.maint){ S.maint=false; S.clean=null; S.swap=null; $('btnMaint').textContent='进入维护模式'; log('退出维护模式：门已关闭并联锁，回原点完成','ok'); return; }
-  if(S.running&&(S.cphase==='WORK'||S.cphase==='INDEX')){ S.maintPending=true; log('已请求维护模式：当前周期结束后停机'); $('btnMaint').textContent='等待当前周期完成…'; } else enterMaint(); });
+  if(S.running&&S.segs){ S.maintPending=true; log('已请求维护模式：当前条带测完后停机'); $('btnMaint').textContent='等待当前条带完成…'; } else enterMaint(); });
 $('btnAlarm').addEventListener('click',()=>{ if(S.alarm) return; S.alarm={code:'E-213',text:'接触不良率超限（Bin 5 > 0.5%），自动停机'}; $('btnAck').disabled=false; log(`报警 ${S.alarm.code}：${S.alarm.text}`,'e'); });
-$('btnAck').addEventListener('click',()=>{ if(!S.alarm) return; log(`报警 ${S.alarm.code} 已复位，针头回原点，可重新启动`,'ok'); S.alarm=null; $('btnAck').disabled=true; });
+$('btnAck').addEventListener('click',()=>{ if(!S.alarm) return; log(`报警 ${S.alarm.code} 已复位，针卡抬起回原点，可重新启动`,'ok'); S.alarm=null; $('btnAck').disabled=true; });
 
 /* ---------------- 启动 ---------------- */
 function start(saved){
