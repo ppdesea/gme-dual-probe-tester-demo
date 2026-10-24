@@ -683,7 +683,7 @@ const MODELS=Object.assign({   // 厂家 STEP → GLB（step2glb.py，mm，已�
   kk86_rail:{src:'HIWIN KK86-640 导轨 + 电机座（hiwin.com KM 平台 CAD 包）',flat:0xb4b9bf,metal:.55,rough:.4}, kk86_car:{src:'HIWIN KK86 滑座',flat:0xb4b9bf,metal:.55,rough:.4}
 },window.__MODELS__||{});
 const REAL=[]; const gltfLoader=(typeof THREE.GLTFLoader==='function')?new THREE.GLTFLoader():null; const modelCache={};
-function loadModel(name){ if(!modelCache[name]) modelCache[name]=new Promise((res,rej)=>gltfLoader.load(MODEL_BASE+name+'.glb',g=>res(g.scene),undefined,rej)); return modelCache[name].then(sc=>sc.clone(true)); }
+function loadModel(name){ if(!modelCache[name]) modelCache[name]=fetch(MODEL_BASE+name+'.b64.txt').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }).then(t=>{ const b=atob(t.trim()); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return new Promise((res,rej)=>gltfLoader.parse(u.buffer,'',g=>res(g.scene),rej)); }); return modelCache[name].then(sc=>sc.clone(true)); }   // GLB 以 base64 文本托管（artifact 只允许文本/图片等类型）
 /* 把 name 对应的厂家模型挂到 group 上，并隐藏 group 直属的简化网格（嵌套的 Group，如滑块，不动）；spec 可覆盖 MODELS 里的摆放 */
 function realPart(group,name,key,spec){ const m=MODELS[name]; if(!m||!gltfLoader) return; spec=Object.assign({},m,spec||{});
   const procs=group.children.filter(c=>c.isMesh);
