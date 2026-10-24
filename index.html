@@ -224,6 +224,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
         </div>
         <div class="hud">
           <button id="btnGhost">透视机壳</button>
+          <button id="btnHide">隐藏机壳</button>
           <button id="btnExplode">分层展开</button>
         </div>
         <div class="labels" id="labels"></div>
@@ -484,7 +485,7 @@ const S={
   outgoing:null,   // 下料取放手里的条带
   seq:0, lot:'LOT-261023-A', planned:100, input:100, paperIn:0, paperOut:100, lastDest:'ok', paperDue:false, ok:0, ng:0, lotScale:130, scaleHist:[],
   strips:0, units:0, pass:0, fail:0, cycles:[], yields:[], lastDone:null,
-  hist:new Array(40).fill(0), lastMeas:[], explode:false, ghost:false, view:'overview', tab:'run',
+  hist:new Array(40).fill(0), lastMeas:[], explode:false, ghost:false, hideShell:false, view:'overview', tab:'run',
   clean:null, swap:null, agv:0, agvOn:false,
   maintItems:[
     {id:'top', name:'上针卡（悬臂式铼钨针）', part:'topCard', unit:'次扎针', life:1000000, used:612400, act:'更换针卡', desc:'铼钨针尖寿命按 100 万次计；卡座解锁后针卡从前门抽出，离线修针、单针可换'},
@@ -663,6 +664,7 @@ const machine=new THREE.Group(); scene.add(machine);
 const shell=new THREE.Group(); machine.add(shell);
 for(const [x,z] of [[-120,-90],[120,-90],[-120,90],[120,90]]){ shell.add(cyl(3,10,M.steel,x,5,z,'shell')); shell.add(box(10,1.5,10,M.steel,x,.8,z,'shell')); }
 shell.add(box(260,8,200,M.base,0,14,0,'shell'));
+shell.children.forEach(m=>{ m.userData.keepBase=true; });   // 机架底座与脚：隐藏机壳时仍显示
 shell.add(box(260,4,200,M.shell,0,172,0,'shell'));
 shell.add(box(260,154,3,M.shell,0,95,-98.5,'shell'));
 shell.add(box(3,154,200,M.shell,-128.5,95,0,'shell'));
@@ -826,14 +828,20 @@ const VIEWS={
   section:{p:[PROBE.x,108,48],t:[PROBE.x,101,PROBE.z],ghost:true}
 };
 let camAnim=null;
+function setShellHidden(on){
+  S.hideShell=on; $('btnHide').classList.toggle('on',on);
+  shell.traverse(m=>{ if(m.isMesh&&!m.userData.keepBase) m.visible=!on; });
+  if(on&&S.ghost) setGhost(false);
+}
 function setGhost(on){
+  if(on&&S.hideShell) setShellHidden(false);
   S.ghost=on; $('btnGhost').classList.toggle('on',on);
   for(const m of [M.shell,M.shellDark]){ m.transparent=on; m.opacity=on?.12:1; m.depthWrite=!on; m.needsUpdate=true; }
   M.glass.opacity=on?.06:.55;
 }
 function setView(v,instant){
   S.view=v; document.querySelectorAll('#views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  const d=VIEWS[v]; setGhost(d.ghost);
+  const d=VIEWS[v]; if(!S.hideShell) setGhost(d.ghost);
   if(instant){ camera.position.set(...d.p); controls.target.set(...d.t); controls.update(); return; }
   camAnim={t:0,p0:camera.position.clone(),t0:controls.target.clone(),p1:new THREE.Vector3(...d.p),t1:new THREE.Vector3(...d.t)};
 }
@@ -1144,6 +1152,7 @@ $('speed').addEventListener('click',ev=>{ const b=ev.target.closest('button'); i
 $('cfg').addEventListener('change',ev=>{ S.cfg=CONFIGS[+ev.target.value]; if(S.segs||S.carrier){ const n=(S.carrier?1:0)+(S.incoming&&S.incoming!==S.carrier?1:0); S.input+=n; clearLine(); S.cycles=[]; S.lastDone=null; mapDirty=true; log(`配置切换到 ${S.cfg.name}，载具上的条带退回上料仓`,'w'); } else log(`配置切换到 ${S.cfg.name}`); buildTakt(); });
 $('views').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(b) setView(b.dataset.v); });
 $('btnGhost').addEventListener('click',()=>setGhost(!S.ghost));
+$('btnHide').addEventListener('click',()=>setShellHidden(!S.hideShell));
 $('btnExplode').addEventListener('click',()=>{ S.explode=!S.explode; $('btnExplode').classList.toggle('on',S.explode); if(S.explode&&S.view!=='section') setView('section'); });
 document.querySelector('.tabs').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.tab=b.dataset.t; document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); for(const t of ['run','mat','test','maint','cmp']) $('tab-'+t).hidden=t!==S.tab;
   measDirty=histDirty=true; const vmap={run:'inside',mat:'lul',test:'section',maint:'station',cmp:'overview'}; setView(vmap[S.tab]); if(S.tab!=='test'&&S.explode){ S.explode=false; $('btnExplode').classList.remove('on'); } uiAcc=1; });
