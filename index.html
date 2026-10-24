@@ -182,8 +182,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 }
 </style>
 
-</head>
-<body>
+</head><body>
 <div class="app">
   <header class="top">
     <div class="brand">
@@ -328,6 +327,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
             <dt>覆盖范围</dt><dd id="tCover">—</dd>
             <dt>PPMU 通道</dt><dd class="mono" id="tCh">—</dd>
             <dt>Sense 线</dt><dd class="mono" id="tSense">—</dd>
+            <dt>涨缩 SPC</dt><dd class="mono" id="tScale">—</dd>
           </dl>
         </div>
         <div class="sec">
@@ -335,6 +335,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
           <dl class="kv">
             <dt>上针卡</dt><dd>PCB 针卡，细针接触 Top 0.12×0.15 mm 焊盘；Sense + Gate；EVA100 测试头直接对接针卡（Pogo tower），无长电缆</dd>
             <dt>下针卡</dt><dd>Pogo 针卡，经载具窗口接触 Bottom 0.35 mm 焊盘；Force 电流</dd>
+            <dt>载具托块</dt><dd>下针卡两侧托条随下 Z 升起托住载具；有限元：2 mm 载具中央下沉 31 µm → 0.5 µm</dd>
+            <dt>涨缩判据</dt><dd>片间随机涨缩到 ±600 ppm 不漏接触；批次均值相对针卡设计值漂移超 ±800 ppm 改半列针卡或重做针卡</dd>
             <dt>VS1S2 读数</dt><dd>针卡上 INA 前端 ×100 → 3:1 复用 → DGT 18 bit（12.5 µV）</dd>
             <dt>防护</dt><dd>电流反向法消热电势；栅极电荷爬坡做接触检查；ESD 时序</dd>
           </dl>
@@ -382,7 +384,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
           <div class="checks">
             <label><input type="checkbox" id="ck1"> 针卡针尖目检（上卡无弯针、下卡 Pogo 无卡滞），针痕位置核对</label>
             <label><input type="checkbox" id="ck2"> 真空压力 ≤ −80 kPa，载具吸附无漏气</label>
-            <label><input type="checkbox" id="ck3"> 对位相机标片复核，偏差 ≤ ±10 µm</label>
+            <label><input type="checkbox" id="ck3"> 对位相机–针卡标片复核，偏差 > 15 µm 重新标定（25 µm 为漏接触悬崖）</label>
             <label><input type="checkbox" id="ck4"> 上下针卡同轴复核 ≤ ±20 µm（标片）</label>
             <label><input type="checkbox" id="ck5"> EVA100 自检通过，PPMU 校准在有效期内</label>
             <label><input type="checkbox" id="ck6"> 接触不良率（Bin 5）前一班 ≤ 0.5%</label>
@@ -445,6 +447,7 @@ const CONFIGS={
 };
 const T={EXCH:4, MOVE:1, ALIGN:2, STEP:.1, DOWN:.15, SETTLE:.1, CONTACT:.1, TEST:.6, UP:.15};
 const TD=1.2, OVERHEAD=T.EXCH+T.MOVE+T.ALIGN+T.MOVE; // 8 s
+const SCALE_LIMIT=800; // ppm：批次平均涨缩相对针卡设计值的漂移阈值（蒙特卡洛：整列针卡 1000 ppm 开始漏接触）
 const MICRO=[['STEP','步进',T.STEP,'--seq-250'],['DOWN','合针',T.DOWN,'--seq-350'],['SETTLE','稳定',T.SETTLE,'--seq-450'],['CONTACT','接触检查',T.CONTACT,'--seq-550'],['TEST','测试',T.TEST,'--seq-650'],['UP','抬起',T.UP,'--seq-350']];
 const MICRO_T=[0,.1,.25,.35,.45,1.05,1.2];
 // 周期分段（单载具）：换片 → 进 → 对位 → 扎针 → 出
@@ -475,7 +478,7 @@ const S={
   incoming:null,   // 本周期进入针卡下方的条带
   carrier:null,    // 载具上的条带
   outgoing:null,   // 下料取放手里的条带
-  seq:0, lot:'LOT-261023-A', planned:25, input:25, ok:0, ng:0,
+  seq:0, lot:'LOT-261023-A', planned:25, input:25, ok:0, ng:0, lotScale:130, scaleHist:[],
   strips:0, units:0, pass:0, fail:0, cycles:[], yields:[], lastDone:null,
   hist:new Array(40).fill(0), lastMeas:[], explode:false, ghost:false, view:'overview', tab:'run',
   clean:null, swap:null, agv:0, agvOn:false,
@@ -539,7 +542,7 @@ function startCycle(){
   else {
     S.segs=SEGS(cfg);
     const tA=T.EXCH+T.MOVE, tP=tA+T.ALIGN;
-    ev.push({t:tP,f:()=>{ incoming.align={dx:(randn()*6).toFixed(0),dy:(randn()*6).toFixed(0),th:(randn()*.004).toFixed(3)}; log(`${incoming.id} Top 面对位：Δx ${incoming.align.dx} µm，Δy ${incoming.align.dy} µm，θ ${incoming.align.th}°`); }});
+    ev.push({t:tP,f:()=>{ incoming.align={dx:(randn()*6).toFixed(0),dy:(randn()*6).toFixed(0),th:(randn()*.004).toFixed(3),sc:Math.round(S.lotScale+randn()*100)}; S.scaleHist.push(incoming.align.sc); if(S.scaleHist.length>50) S.scaleHist.shift(); const mean=Math.round(S.scaleHist.reduce((a,b)=>a+b,0)/S.scaleHist.length); log(`${incoming.id} Top 面对位：Δx ${incoming.align.dx} µm，Δy ${incoming.align.dy} µm，θ ${incoming.align.th}°，涨缩 ${incoming.align.sc>=0?'+':''}${incoming.align.sc} ppm（批次均值 ${mean>=0?'+':''}${mean}，阈值 ±${SCALE_LIMIT}）`, Math.abs(mean)>SCALE_LIMIT?'warn':''); }});
     for(let k=0;k<cfg.N;k++){
       ev.push({t:tP+k*TD,f:()=>{ incoming.k=k; }});
       ev.push({t:tP+k*TD+MICRO_T[4],f:()=>{ S.lastMeas=[]; for(const i of tdUnits(cfg,k)){ incoming.res[i]=1; S.lastMeas.push({i,pending:true}); } incoming.texDirty=true; mapDirty=measDirty=true; }});
@@ -625,6 +628,7 @@ const INFO={
   stripper:['上压板（Stripper）','随上针卡下降先压住条带，抬针时把条带从针尖剥离。'],
   botCard:['下针卡（Pogo Card）','Pogo 针卡，经载具窗口接触 Bottom 面 9 个焊盘 + 中心焊盘，承担 Force 电流。'],
   botHolder:['下针卡座 / 测试头对接','下针卡装在下卡座，512ch 时第二台 EVA100 的测试头从下方对接；整单元带 Z 轴。'],
+  rail:['载具托块','下针卡两侧各一条，随下 Z 升起托住测试位下方的载具。有限元：2 mm 载具在压板预压 + 针力下中央下沉 31 µm，吃掉 1/3 的 Top 针过冲；加托块后 0.5 µm。'],
   ina:['INA 前端板','装在上针卡上：4 路 Sense 差分放大 ×1 / ×100，3:1 复用进 EVA100 DGT，用于 0.6–2.88 mV 的 VS1S2。'],
   eva:['Advantest EVA100','测试源，内置后部机柜：每针 PPMU（−1.25 ~ +7 V，±32 mA）、DPS、AWG/DGT 18 bit。128/256 ch 一台，512 ch 两台。'],
   testhead:['EVA100 测试头','对接针卡的测试头，上下各一（512ch）；128/256 ch 时下卡经短电缆接上测试头。'],
@@ -746,6 +750,8 @@ const botUnit=new THREE.Group(); botUnit.position.set(PROBE.x,40,PROBE.z); cfram
 botUnit.add(box(14,10,14,M.alu,0,5,-20,'botHolder')); botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder'));
 const botHead=box(36,20,36,M.dark,0,24,0,'testhead'); botUnit.add(botHead);
 botUnit.add(box(30,3,30,M.cardHolder,0,35.5,0,'botHolder'));
+// 载具托块：下针卡两侧，随下 Z 升起托住载具底座（有限元：2 mm 载具下沉 31 µm → 0.5 µm）
+botUnit.add(box(1.2,12.4,11,M.alu,-3.6,45.2,0,'rail')); botUnit.add(box(1.2,12.4,11,M.alu,3.6,45.2,0,'rail'));
 const botCard=new THREE.Group(); botUnit.add(botCard); botCard.position.y=38;
 botCard.add(box(32,1.2,32,M.pcb,0,0,0,'botCard')); botCard.add(box(33,.4,33,M.pcbEdge,0,.7,0,'botCard'));
 botCard.add(box(5,16,9,M.navy,0,8.6,0,'botCard')); botCard.add(box(3.6,.8,7.6,M.gold,0,17,0,'botCard'));
@@ -842,6 +848,7 @@ const LABELS=[
   {obj:stripper, off:[0,-5,-7], text:'上压板 Stripper'},
   {obj:carStrip.mesh, off:[8,0,0], text:'条带 142×66×0.28 mm · 真空载具 + 张力夹'},
   {obj:botCard, off:[-16,0,0], text:'下针卡 · Pogo · Force'},
+  {obj:botCard, off:[14,8,0], text:'载具托块 · 下沉 31 → 0.5 µm'},
   {obj:botHead, off:[0,0,18], text:'下测试头（512ch 第二台）'}
 ];
 const labelsEl=$('labels'); const labelDivs=LABELS.map(l=>{ const d=document.createElement('div'); d.className='lbl'; d.textContent=l.text; d.hidden=true; labelsEl.appendChild(d); return d; });
@@ -1070,6 +1077,7 @@ function updateUI(dt){
   if(S.tab==='mat'){ updateFlow(); $('mIn').textContent=S.input; $('mInBar').style.width=(S.input/25*100)+'%'; $('mOk').textContent=S.ok; $('mNg').textContent=S.ng; $('lotProg').textContent=`${S.planned} / ${S.strips}`; const left=Math.max(0,S.planned-S.strips); $('lotEta').textContent=left?hms(left*cycleLen()+4):'已完成'; }
   if(S.tab==='test'){ const k=inc&&S.phase==='PROBE'?inc.k:null; const ok=k!=null&&k>=0; $('tTd').textContent=ok?`第 ${k+1} / ${S.cfg.N} 次`:'—'; $('tCover').textContent=ok?`${S.cfg.cover(k)} · ${S.cfg.perTd} 单元`:'—';
     $('tCh').textContent=ok?`${S.cfg.perTd*8} / ${S.cfg.ch}（每单元 8 ch）`:`— / ${S.cfg.ch}`; $('tSense').textContent=ok?`${S.cfg.perTd*4} 路 → INA ×100 → 3:1 复用 → DGT`:'—';
+    if(S.scaleHist.length){ const m=Math.round(S.scaleHist.reduce((a,b)=>a+b,0)/S.scaleHist.length); $('tScale').textContent=`本片 ${inc&&inc.align?(inc.align.sc>=0?'+':'')+inc.align.sc:'—'} ppm · 批次均值 ${m>=0?'+':''}${m} ppm（${S.scaleHist.length} 片）· 阈值 ±${SCALE_LIMIT} ppm${Math.abs(m)>SCALE_LIMIT?' · 超限：改半列针卡或重做针卡':''}`; } else $('tScale').textContent='—';
     if(measDirty){ updateMeas(); measDirty=false; } if(histDirty){ drawHist(); histDirty=false; } }
   if(S.tab==='maint') updateMaint();
   updateTakt();
@@ -1111,5 +1119,5 @@ function start(saved){
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 })();
 </script>
-</body>
-</html>
+
+</body></html>
