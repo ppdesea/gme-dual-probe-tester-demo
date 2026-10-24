@@ -676,7 +676,7 @@ const INFO={
 function reg(key,mesh){ mesh.userData.part=key; (PARTS[key]||(PARTS[key]={meshes:[]})).meshes.push(mesh); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 
 /* ---------------- 厂家 CAD 模型（STEP → GLB，GitHub Pages 托管；单位 mm，页面 1:10） ---------------- */
-const MODEL_BASE=((location.hostname.endsWith('github.io')||location.hostname==='localhost')?'':'https://ppdesea.github.io/gme-dual-probe-tester-demo/')+'models/';
+const MODEL_BASE='models/';   // GLB 与页面同源托管（GitHub Pages 的 models/，artifact 的随附文件）
 const MODELS=Object.assign({   // 厂家 STEP → GLB（step2glb.py，mm，已对齐：长度沿 x，底面 y=0，xz 居中）
   patlite_lr6_302:{src:'Patlite LR6-302WJN.STEP（patlite.com 官方 3D）'},
   kk100_rail:{src:'HIWIN KK100 导轨 + 电机座（hiwin.com KM 平台 CAD 包）',flat:0xb4b9bf,metal:.55,rough:.4}, kk100_car:{src:'HIWIN KK100 滑座',flat:0xb4b9bf,metal:.55,rough:.4},
