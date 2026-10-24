@@ -680,7 +680,8 @@ const MODEL_BASE='models/';   // GLB 与页面同源托管（GitHub Pages 的 mo
 const MODELS=Object.assign({   // 厂家 STEP → GLB（step2glb.py，mm，已对齐：长度沿 x，底面 y=0，xz 居中）
   patlite_lr6_302:{src:'Patlite LR6-302WJN.STEP（patlite.com 官方 3D）'},
   kk100_rail:{src:'HIWIN KK100 导轨 + 电机座（hiwin.com KM 平台 CAD 包）',flat:0xb4b9bf,metal:.55,rough:.4}, kk100_car:{src:'HIWIN KK100 滑座',flat:0xb4b9bf,metal:.55,rough:.4},
-  kk86_rail:{src:'HIWIN KK86-640 导轨 + 电机座（hiwin.com KM 平台 CAD 包）',flat:0xb4b9bf,metal:.55,rough:.4}, kk86_car:{src:'HIWIN KK86 滑座',flat:0xb4b9bf,metal:.55,rough:.4}
+  kk86_rail:{src:'HIWIN KK86-640 导轨 + 电机座（hiwin.com KM 平台 CAD 包）',flat:0xb4b9bf,metal:.55,rough:.4}, kk86_car:{src:'HIWIN KK86 滑座',flat:0xb4b9bf,metal:.55,rough:.4},
+  futek_lcm300:{src:'Futek LCM300 M6 微型接插件版（futek.com 官方 STEP）',flat:0xc9ccd0,metal:.8,rough:.3}
 },window.__MODELS__||{});
 const REAL=[]; const gltfLoader=(typeof THREE.GLTFLoader==='function')?new THREE.GLTFLoader():null; const modelCache={};
 function loadModel(name){ if(!modelCache[name]) modelCache[name]=fetch(MODEL_BASE+name+'.b64.txt').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }).then(t=>{ const b=atob(t.trim()); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return new Promise((res,rej)=>gltfLoader.parse(u.buffer,'',g=>res(g.scene),rej)); }); return modelCache[name].then(sc=>sc.clone(true)); }   // GLB 以 base64 文本托管（artifact 只允许文本/图片等类型）
@@ -915,7 +916,7 @@ const camAssy=cameraAssy('camera',true); camAssy.position.set(CAMX,124,PROBE.z);
 // 上针卡单元：KR33 Z 轴（挂在上臂下）→ 力传感器 → 测试头 → 卡座 → 针卡
 const topUnit=new THREE.Group(); topUnit.position.set(PROBE.x,145,PROBE.z); cframe.add(topUnit);
 { const z=screwModule(20,3.3,3.07,6,'topHolder',M.thk); z.rotation.z=Math.PI/2; z.position.set(0,-6,-20); topUnit.add(z); const m=servo(6,7.9,'topHolder'); m.rotation.x=Math.PI/2; m.position.set(0,4.4,-20); topUnit.add(m); }
-topUnit.add(box(14,4,30,M.alu,0,-12,-6,'topHolder')); topUnit.add(cyl(1.27,3.05,M.steel,0,-15.5,-6,'topHolder',24)); topUnit.add(cyl(.3,.8,M.steel,0,-17.4,-6,'topHolder',10)); topUnit.add(cyl(.3,.8,M.steel,0,-13.6,-6,'topHolder',10)); topUnit.add(cyl(.45,.9,M.dark,1.6,-15.5,-6,'topHolder',10).rotateZ(Math.PI/2));          // Futek LCM300 Ø25.4×30.5，两端 M6 螺柱，侧面 4 pin 插座
+topUnit.add(box(14,4,30,M.alu,0,-12,-6,'topHolder')); { const lc=new THREE.Group(); lc.position.set(0,-15.5,-6); topUnit.add(lc); lc.add(cyl(1.27,3.05,M.steel,0,0,0,'topHolder',24)); lc.add(cyl(.3,.8,M.steel,0,-1.9,0,'topHolder',10)); lc.add(cyl(.3,.8,M.steel,0,1.9,0,'topHolder',10)); lc.add(cyl(.45,.9,M.dark,1.6,0,0,'topHolder',10).rotateZ(Math.PI/2)); realPart(lc,'futek_lcm300','topHolder'); }          // Futek LCM300 Ø25.4×30.5，两端 M6 螺柱，侧面 4 pin 插座
 topUnit.add(box(36,20,36,M.dark,0,-24,0,'testhead'));                            // 上测试头
 topUnit.add(box(30,3,30,M.cardHolder,0,-35.5,0,'topHolder'));                    // 卡座 / Pogo tower
 const topCard=new THREE.Group(); topUnit.add(topCard); topCard.position.y=-38;
@@ -929,7 +930,7 @@ const stripper=new THREE.Group(); topCard.add(stripper);   // 悬臂针卡无上
 // 下针卡单元：下臂 → KR33 Z 轴 → 力传感器 → 测试头 → 卡座 → 针卡 → Pogo 块
 const botUnit=new THREE.Group(); botUnit.position.set(PROBE.x,40,PROBE.z); cframe.add(botUnit);
 { const z=screwModule(20,3.3,3.07,6,'botHolder',M.thk); z.rotation.z=Math.PI/2; z.position.set(0,6,-20); botUnit.add(z); const m=servo(6,7.9,'botHolder'); m.rotation.x=-Math.PI/2; m.position.set(0,-4.4,-20); botUnit.add(m); }
-botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder')); botUnit.add(cyl(1.27,3.05,M.steel,0,15.5,-6,'botHolder',24)); botUnit.add(cyl(.3,.8,M.steel,0,17.4,-6,'botHolder',10)); botUnit.add(cyl(.3,.8,M.steel,0,13.6,-6,'botHolder',10)); botUnit.add(cyl(.45,.9,M.dark,1.6,15.5,-6,'botHolder',10).rotateZ(Math.PI/2));
+botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder')); { const lc=new THREE.Group(); lc.position.set(0,15.5,-6); botUnit.add(lc); lc.add(cyl(1.27,3.05,M.steel,0,0,0,'botHolder',24)); lc.add(cyl(.3,.8,M.steel,0,-1.9,0,'botHolder',10)); lc.add(cyl(.3,.8,M.steel,0,1.9,0,'botHolder',10)); lc.add(cyl(.45,.9,M.dark,1.6,0,0,'botHolder',10).rotateZ(Math.PI/2)); realPart(lc,'futek_lcm300','botHolder',{rot:[Math.PI,0,0]}); }
 const botHead=box(36,20,36,M.dark,0,24,0,'testhead'); botUnit.add(botHead);
 botUnit.add(box(30,3,30,M.cardHolder,0,35.5,0,'botHolder'));
 // 载具托块：下针卡两侧，随下 Z 升起托住载具底座（有限元：2 mm 载具下沉 31 µm → 0.5 µm）
@@ -1173,7 +1174,7 @@ const BOM=[
   ['xy','θ 轴','Suruga Seiki KRW06360C-Z','1','Ø60 蜗轮旋转台，0.004°/步（≤ 0.5 arcmin）'],
   ['xy','XY 伺服','Panasonic MINAS A6 MHMF042L1U2 + 驱动','2','400 W，60 mm 法兰，EtherCAT'],
   ['topHolder','Z 轴（上 / 下）','THK KR33 滚珠丝杠模组 + Panasonic A6 200 W','2','33 mm 宽，行程 100 mm，重复 ±3 µm'],
-  ['topHolder','针力传感器','Futek LCM300','2','Ø24.9 mm 微型拉压式，17-4 PH，量程 ≤ 1 kN'],
+  ['topHolder','针力传感器','Futek LCM300','2','Ø25 mm 微型拉压式，17-4 PH，M6 螺柱，量程 ≤ 1 kN ★ 厂家 STEP'],
   ['camera','对位相机','Basler acA2500-14gm + Computar TEC-M55MPW + CCS 环形光','1','5 MP 2.2 µm；远心 Ø59×93，WD 140 mm'],
   ['upcam','上视相机','Basler acA2500-14gm + Computar TEC-M55MPW','1','针尖检查、相机–针卡标定'],
   ['carrier','真空载具','定制 网格镂空载具（不锈钢 2 mm）','2','筋条带吸孔，产品专用快换；SMC ZSE30A 真空开关'],
