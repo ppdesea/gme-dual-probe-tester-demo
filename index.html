@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<meta charset="utf-8">
 <title>双面扎针测试机演示</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -41,6 +42,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-ui);-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer;line-height:1.3}
@@ -144,6 +146,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .tbl{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:4px}
 .tbl th,.tbl td{white-space:nowrap}
 .cmp td:first-child{color:var(--ink-2);white-space:nowrap}
+.bom tbody tr{cursor:pointer}.bom tbody tr:hover,.bom tbody tr.on{background:var(--accent-wash)}.bom td:nth-child(3){font-family:var(--font-mono);font-size:11px}
 .cmp td.me{background:var(--accent-wash)}
 .log{font-size:12px;display:grid;gap:3px;max-height:220px;overflow:auto}
 .log div{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:2px 0;border-bottom:1px solid var(--line)}
@@ -250,6 +253,15 @@ td.num,th.num{text-align:right;white-space:nowrap}
         <button data-t="test" role="tab">测试</button>
         <button data-t="maint" role="tab">维护</button>
         <button data-t="cmp" role="tab">对标</button>
+        <button data-t="bom" role="tab">器件</button>
+      </div>
+
+      <div class="pbody" id="tab-bom" hidden>
+        <div class="sec">
+          <h3>主要器件选型（点行高亮并聚焦）</h3>
+          <div class="note">外形尺寸按厂家目录（标「近似」者按目录照片估计），1 单位 = 10 mm；型号为选型建议，下单前按最终布局核对行程与接口。</div>
+          <table class="cmp bom" id="bomTable"><thead><tr><th>#</th><th>器件</th><th>型号</th><th>数量</th><th>关键参数</th></tr></thead><tbody></tbody></table>
+        </div>
       </div>
 
       <div class="pbody" id="tab-run">
@@ -605,7 +617,11 @@ const M={
   screen:std(0x1a2f4a,{emissive:0x1e6fd0,emissiveIntensity:.9}), eva:std(0xe9eae6), evaBand:std(0x1f3a63), estop:std(0xc8102e,{emissive:0x600000,emissiveIntensity:.3}), estopRing:std(0xf2c300),
   lampR:std(0x5a1b1b,{emissive:0xd03b3b,emissiveIntensity:0}), lampY:std(0x5a4a10,{emissive:0xfab219,emissiveIntensity:0}), lampG:std(0x1b4a1b,{emissive:0x0ca30c,emissiveIntensity:0}),
   ring:std(0xffffff,{emissive:0xffffff,emissiveIntensity:.1}), reader:std(0x222,{emissive:0xd03b3b,emissiveIntensity:.1}), ceramic:std(0xf6f4ee,{roughness:.8}), curtain:std(0x3a3f45,{emissive:0xd03b3b,emissiveIntensity:.25}),
-  clamp:std(0x3b6ea5,{metalness:.4}), agv:std(0xf0a030), rubber:std(0x1a1a1a,{roughness:.95})
+  clamp:std(0x3b6ea5,{metalness:.4}), agv:std(0xf0a030), rubber:std(0x1a1a1a,{roughness:.95}),
+  festo:std(0xb7bcc3,{metalness:.5,roughness:.4}), festoBlue:std(0x0a2a6b), thk:std(0x8d949c,{metalness:.6,roughness:.35}), hiwin:std(0xa9afb6,{metalness:.55,roughness:.4}),
+  keyence:std(0x2b2f36,{roughness:.6}), keyenceAccent:std(0xe8762c), lens:std(0x101418,{metalness:.3,roughness:.2}), glassLens:std(0x4a6a8a,{metalness:.6,roughness:.1}),
+  yellow:std(0xf2c300), redLens:std(0xc8102e,{emissive:0x600000,emissiveIntensity:.4}), granite2:std(0x2f3338,{roughness:.4,metalness:.1}), motorBlack:std(0x1f2327,{metalness:.4,roughness:.5}),
+  copper:std(0xb87333,{metalness:.8,roughness:.35}), pcbGreen:std(0x1d5c33,{roughness:.6}), ceramicW:std(0xf3f1ea,{roughness:.9}), cabinet:std(0xdfe3e6,{roughness:.6}), din:std(0xc9ccd0,{metalness:.5})
 };
 const SHELL_MATS=[M.shell,M.shellDark,M.glass];
 const PARTS={};
@@ -617,36 +633,39 @@ const INFO={
   monitor:['主操作屏','配方、实时 Map、节拍与良率、报警与维护提醒；CIM V5.0 接口。'],
   lampBar:['状态灯带 / 按钮','绿：运行；黄：待料 / 维护；红：报警。旁边是启动、停止按钮和急停。'],
   estop:['急停','按下即切断所有运动轴使能，EVA100 转待命。'],
-  tower:['三色灯','绿：运行；黄：待料 / 维护；红：报警停机。'],
-  inMag:['上料堆叠仓（电梯式）','100 片/仓，片间夹防静电垫纸，每层约 0.5 mm；升降机构 + 料面激光测高保持取片高度恒定；导柱手动调宽 45×50～240×95 mm；A/B 双仓轮换，缺料黄灯。'],
+  tower:['三色灯 Patlite LR6-302WJNW-RYG','Ø60 三层直装：绿运行、黄待料 / 维护、红报警停机，带蜂鸣。'],
+  inMag:['上料堆叠仓（电梯式，THK KR33 + AZM66 + IL-100）','100 片/仓，片间夹防静电垫纸；THK KR33 竖直模组 + Oriental Motor AZM66 绝对式步进做升降，Keyence IL-100 激光位移（基准距 100 mm，重复 4 µm）测料面保持取片高度恒定；导柱手动调宽 45×50～240×95 mm；A/B 双仓轮换。'],
   paperIn:['垫纸回收仓','上料取走一片后，垫纸 picker 把露出的防静电垫纸移到这里，100 张。'],
   paperOut:['垫纸供给仓','下料每入仓一片，垫纸 picker 从这里取一张盖上，100 张。'],
-  paperPick:['垫纸取放','小型 Y/Z 真空取放：上料侧回收、下料侧供给，各约 2 s，都与测试并行。'],
+  paperPick:['垫纸取放 Festo ELGC-TB-KF-45-300 + EGSC-BS-KF-33-50','小型同步带轴 + 迷你滑台，3 个 SMC 波纹吸盘：上料侧把露出的垫纸移入回收仓，下料侧从供给仓取一张盖上，各约 2 s，都与测试并行。'],
   markStage:['打标缓冲台','真空平台：下料 picker 把测完的条带放到这里（±0.3 mm），打标头同轴相机先读条带两角 Mark 定位（±50 µm），再按 e-map 坐标激光打 NG 颗（0.08 s/颗，NG 3% 约 2.2 s），然后送入下料仓；全程与下一条的测试并行。标 Top 面，若需标 Bottom 面改翻转台。'],
-  laser:['激光打标头 + 同轴相机','同轴相机读条带两角 Mark 建立坐标，再按本机 e-map 给 NG 单元打标；打完抽检标记位置。'],
+  laser:['激光打标 Keyence MD-U1000C + 定位相机','3 轴紫外打标头（打标区 125×125 mm，工作距离 189 mm，头重 18 kg）装在缓冲台上方；旁边 Basler 相机 + 25 mm 镜头读条带两角 Mark 建立坐标，再按本机 e-map 给 NG 单元打标；打完抽检标记位置。'],
   okMag:['OK 下料仓（电梯式）','单元良率 ≥ 97% 的条带，片间自动加垫纸；100 片/仓。'],
   ngMag:['NG 下料仓（电梯式）','单元良率 < 97% 的条带（阈值可配），Map 上传后人工复判；100 片/仓。'],
-  pnpLoad:['上料取放机构','X/Z 真空吸头：8 个 Ø8 防静电波纹吸盘吸 Top 面阻焊区，剥离式起吸 + 离子风把 0.28 mm 薄片从垫纸上分离；途经对射激光测厚点做双片 / 带纸检测，再放到换片位的载具上（±0.3 mm）。'],
-  pnpUnload:['下料取放机构','在换片位从载具取走测完的条带 → 打标缓冲台 → 按良率送入 OK 或 NG 仓，共约 6 s；全程与下一条的测试并行。'],
-  gauge:['双片 / 带纸检测','对射激光测厚：0.28 mm 单片、0.38 带纸、0.56 双片分得开；异常片退回料堆顶重取一次，再异常报警。2D 码改在测试位由对位相机读取。'],
-  xy:['XYθ 步进台','长行程 X 轴把载具在换片位和针卡下方之间来回；短行程 XYθ 做对位补偿和 Step & Repeat 步进。'],
+  pnpLoad:['上料取放 Festo ELGC-TB-KF-60-400 + EGSC-BS-KF-45-50','X：Festo ELGC-TB-KF-60 同步带轴（行程 400 mm，1.5 m/s，15 m/s²，±0.1 mm）；Z：EGSC-BS-KF-45-50 滚珠丝杠迷你滑台（50 mm，±0.015 mm）；吸头 8 个 SMC ZP2-TB08MBGN-H5 导电 NBR 波纹吸盘（Ø8）+ SMC ZK2 真空发生器。剥离式起吸 + 离子风分离薄片，途经 IG-028 测厚，放到载具 ±0.3 mm。'],
+  pnpUnload:['下料取放 Festo EGC-70-1000-TB-KF + EGSC-BS-KF-45-50','X：Festo EGC-70 同步带轴（行程 1000 mm）覆盖换片位 → 打标缓冲台 → OK / NG 仓；Z：EGSC-BS-KF-45-50；吸头同上料。一片约 6 s，全程与下一条测试并行。'],
+  gauge:['双片 / 带纸检测 Keyence IG-028','对射式 CCD 激光测微计（量程 28 mm，重复 5 µm）：条带从收发头之间经过，0.28 mm 单片、0.38 带纸、0.56 双片分得开；异常片退回料堆顶重取一次，再异常报警。'],
+  xy:['XYθ 载具台（HIWIN KK + Suruga θ）','X：HIWIN KK10020P 滚珠丝杠模组（100 mm 宽，行程约 1000 mm，重复 ±3 µm，加光栅尺）；Y：HIWIN KK8610P-640（86 宽，行程 510 mm）；θ：Suruga Seiki KRW06360C-Z 蜗轮旋转台（Ø60，0.004°/步）；电机 Panasonic MINAS A6 400 W。对位补偿和 Step & Repeat 都由这三轴完成。'],
+  upcam:['上视相机（针尖检查）','Basler acA2500-14gm（5 MP，29×29×42 mm）+ Computar TEC-M55MPW 远心镜头（Ø59×93，WD 140 mm），装在载具座侧面，随载具进针卡下方拍针尖，做相机–针卡标定和针尖位置度 / 磨损检查。'],
+  granite:['花岗岩平台','济南青花岗岩 1400×900×200 mm，XYθ 台和 C 型框架同坐其上，隔离机架变形与振动。'],
+  ionizer:['离子风棒 Keyence SJ-H036A','棒长 340 mm，两根：一根在上料仓上方吹料堆边缘，一根在取放路径上方；消除剥离垫纸的摩擦起电，验收片面电位 ≤ ±100 V。'],
   carrier:['格栅窗口真空载具','筋条位于列间工艺街，带真空吸孔吸平 0.28 mm 薄板；窗口露出 Bottom 焊盘给下针卡，对下针余量约 ±1 mm，放片不需机械推靠。'],
   clamp:['边缘定位夹','载具两端的定位边夹，放片后轻夹限位，不承担拉平（拉平靠筋条真空）。'],
-  camera:['对位相机','装在 C 型框架上、针卡旁边；载具先移到相机下取 Top 面 Mark，偏差送 XYθ 台补偿，再进针卡下方。'],
+  camera:['对位相机 Basler + Computar 远心','Basler acA2500-14gm（5 MP，2.2 µm 像元）+ Computar TEC-M55MPW 远心镜头 + CCS 环形光，装在 C 型框架上针卡旁；读 2D 码并拍四角 Mark，偏差送 XYθ 台补偿。'],
   cframe:['C 型刚性框架','上下针卡单元装在同一框架上，一次对位两面同轴；上下 Z 同步反向运动，反力在框架内相消；大板不转台，结构简单成本低。'],
   topCard:['上针卡（悬臂式铼钨针 Probe Card）','环氧环悬臂式铼钨针卡：6 针列 Ø0.20 mm / 梁长 4.8 mm，2 针 Ø0.30 mm / 梁长 7.6 mm，配平到 6 gf @ 75 µm，设定过冲 80 µm，刮擦 12～15 µm；接触 Top 面 8 个焊盘，承担 Sense 与 Gate；无上压板；PCB 带加强环；卡座快换。'],
-  topHolder:['上针卡座 / 测试头对接','针卡装在卡座里，EVA100 测试头从上方经 Pogo tower 直接对接针卡，不用长电缆。整单元带 Z 轴。'],
+  topHolder:['上针卡单元 Z 轴（THK KR33 + A6 200 W + Futek LCM300）','THK KR33 滚珠丝杠模组做 Z（行程 100 mm，重复 ±3 µm），Panasonic MINAS A6 200 W 伺服，Futek LCM300 力传感器（Ø25）串在测试头吊架里做力反馈软着陆；针卡装在卡座里，EVA100 测试头经 Pogo tower 直接对接。'],
   stripper:['（无上压板）','悬臂针卡不设上压板：下针反力（15～20 gf × 4）由上针合力和载具筋条真空吸力（≥ 36 gf/颗）平衡。'],
   botCard:['下针卡（Pogo Card）','Pogo 针卡，经载具窗口接触 Bottom 面 3×3 焊盘的四角 4 个（S1F/S2F × 2 Die），承担 Force 电流；针力 15～20 gf（无上压板，由上针合力 + 筋条吸力平衡）。候选：LEENO G026/G030、Smiths Micro 0.020"、INGUN GKS-038 短行程。'],
-  botHolder:['下针卡座 / 测试头对接','下针卡装在下卡座，512ch 时第二台 EVA100 的测试头从下方对接；整单元带 Z 轴。'],
+  botHolder:['下针卡单元 Z 轴（THK KR33 + A6 200 W + Futek LCM300）','与上单元同型号的 KR33 Z 轴和力传感器，装在下臂上；512ch 时第二台 EVA100 的测试头从下方对接下针卡。上下 Z 同步反向运动。'],
   rail:['载具托块','下针卡两侧各一条，随下 Z 升起托住测试位下方的载具。有限元：2 mm 载具在压板预压 + 针力下中央下沉 31 µm，吃掉 1/3 的 Top 针过冲；加托块后 0.5 µm。'],
   ina:['INA 前端板','装在上针卡上：4 路 Sense 差分放大 ×1 / ×100，3:1 复用进 EVA100 DGT，用于 0.6–2.88 mV 的 VS1S2。'],
-  eva:['Advantest EVA100','测试源，内置后部机柜：每针 PPMU（−1.25 ~ +7 V，±32 mA）、DPS、AWG/DGT 18 bit。128/256 ch 一台，512 ch 两台。'],
+  eva:['Advantest EVA100（后部 19 英寸机柜）','Testing Unit Standard 363 W × 206 H × 472 D mm，约 11～19 kg；512 ch 两台叠装，另有 ACDC Box（140×206×462）和工作站 PC。每针 PPMU（−1.25 ~ +7 V，±32 mA）、DPS、AWG/DGT 18 bit。'],
   testhead:['EVA100 测试头','对接针卡的测试头，上下各一（512ch）；128/256 ch 时下卡经短电缆接上测试头。'],
   cable:['测试头电缆','主机到测试头的系统电缆。'],
-  vacuum:['真空单元','真空泵 + 滤芯 + 压力传感器，为载具吸附供气；低于 −80 kPa 报警。'],
-  controller:['运动控制器','XYθ 台、Z 合针、取放轴的伺服控制，与 EVA100 握手。'],
-  curtain:['安全光幕','料仓舱人体进入即停上下料机构，测试继续。'],
+  vacuum:['真空单元 ORION KRF40 + SMC ZSE30A','ORION KRF40 干式真空泵为载具筋条吸孔供真空，SMC ZSE30A 数字真空开关在载具上确认到位（低于 −60 kPa 不放行）；取放吸头各自用 SMC ZK2 真空发生器。'],
+  controller:['电气柜（Omron NJ501 + Panasonic A6 + Festo CMMT）','Omron NJ501-1300 运动控制 PLC（EtherCAT，90×96×150 mm，满足美维采规 CJ2M 以上）；Panasonic MINAS A6 驱动器 ×4（X/Y/Z 上/Z 下）；Festo CMMT-ST 驱动 ×4（取放 / 垫纸轴）；开关电源、SMC 阀岛；与 EVA100 用 TTL 握手 + TCP/IP。'],
+  curtain:['安全光幕 Keyence GL-R31F','3 mm 挤铝外壳，手指保护（ø14），全长 320 mm，一对；料仓舱人体进入即停上下料机构，测试继续。'],
   strip:['被测条带','142×66×0.28 mm，6 层，30×24 = 720 单元，每单元 2 颗 Nuvoton KFCAB12003NL 双 N-MOS 埋在 L4。'],
   agv:['AGV 对接（选配）','AGV 送整仓到料仓舱，自动换仓。'],
   clean:['清洁片','维护时放到载具上，上下针卡各扎 3 次。']
@@ -654,6 +673,53 @@ const INFO={
 function reg(key,mesh){ mesh.userData.part=key; (PARTS[key]||(PARTS[key]={meshes:[]})).meshes.push(mesh); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
 function box(w,h,d,mat,x=0,y=0,z=0,key){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); if(key) reg(key,m); return m; }
 function cyl(r,h,mat,x=0,y=0,z=0,key,seg=24){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),mat); m.position.set(x,y,z); if(key) reg(key,m); return m; }
+/* ---------------- 真实器件库（外形按目录尺寸，1 单位 = 10 mm；标注「近似」的为按目录照片估计的外形） ---------------- */
+// 伺服电机：方形机身 + 法兰 + 轴 + 编码器盖 + 接头。frame/len 为 mm/10
+function servo(frame,len,key,mat){ const g=new THREE.Group(); const f=frame; g.add(box(f,f,len,mat||M.motorBlack,0,0,-len/2,key)); g.add(cyl(f*.45,.4,M.alu,0,0,.2,key,24).rotateX(Math.PI/2)); g.add(cyl(f*.12,1.6,M.steel,0,0,1,key,12).rotateX(Math.PI/2)); g.add(box(f*.8,f*.8,1.2,M.dark,0,0,-len-.6,key)); g.add(box(f*.4,f*.25,1.4,M.dark,f*.25,f*.55,-len*.35,key)); g.add(box(f*.4,f*.25,1.4,M.dark,-f*.25,f*.55,-len*.35,key)); return g; }
+// 滚珠丝杠直线模组（HIWIN KK / THK KR 风格）：U 形铝型材 + 丝杠 + 滑座 + 端板 + 电机座。沿 +x 布置，电机在 −x 端
+function screwModule(len,w,h,carL,key,mat){ const g=new THREE.Group(); const m=mat||M.hiwin;
+  g.add(box(len,h*.3,w,m,0,h*.15,0,key)); g.add(box(len,h,w*.14,m,0,h/2,-(w/2-w*.07),key)); g.add(box(len,h,w*.14,m,0,h/2,(w/2-w*.07),key));
+  g.add(box(len-2,h*.08,w*.12,M.steel,0,h*.62,-(w*.27),key)); g.add(box(len-2,h*.08,w*.12,M.steel,0,h*.62,(w*.27),key));   // 导轨
+  g.add(cyl(w*.07,len-2,M.steel,0,h*.55,0,key,12).rotateZ(Math.PI/2));                                                   // 丝杠
+  g.add(box(1.6,h,w,M.dark,-len/2+.8,h/2,0,key)); g.add(box(1.6,h,w,M.dark,len/2-.8,h/2,0,key));                        // 端板
+  g.add(box(4,h,w*.96,M.dark,-len/2-2,h/2,0,key));                                                                        // 电机座 / 联轴器腔
+  const car=new THREE.Group(); car.add(box(carL,h*.32,w*.98,M.alu,0,h+h*.16,0,key)); g.add(car); g.userData.car=car; return g; }
+// 同步带直线轴（Festo ELGC / EGC 风格）：铝型材 + 上部皮带盖 + 滑块
+function beltAxis(len,w,h,slideL,key){ const g=new THREE.Group(); g.add(box(len,h,w,M.festo,0,h/2,0,key)); g.add(box(len-1,.3,w*.7,M.dark,0,h+.15,0,key)); g.add(box(1.2,h+.6,w+.4,M.festoBlue,-len/2+.6,h/2+.3,0,key)); g.add(box(1.2,h+.6,w+.4,M.festoBlue,len/2-.6,h/2+.3,0,key)); const sl=new THREE.Group(); sl.add(box(slideL,1.4,w*.9,M.alu,0,h+.9,0,key)); g.add(sl); g.userData.slide=sl; return g; }
+// 迷你滑台（Festo EGSC 风格，竖直）：本体 + 前侧动板 + 顶部电机
+function miniSlideZ(w,len,key){ const g=new THREE.Group(); g.add(box(w,len,w*.55,M.festo,0,-len/2,0,key)); g.add(box(w*.9,len*.55,.8,M.alu,0,-len*.72,w*.3+.4,key)); g.add(box(w*.6,w*.6,w*.6,M.motorBlack,0,w*.4,0,key)); return g; }
+// 工业相机（Basler ace 29×29×42）+ 远心镜头（Computar TEC-M55MPW Ø59×93）+ 环形光（CCS Ø70），镜头朝 −y
+function cameraAssy(key,ring){ const g=new THREE.Group(); g.add(box(2.9,4.2,2.9,M.dark,0,2.1,0,key)); g.add(box(1.2,.8,1.2,M.steel,0,4.6,0,key)); g.add(cyl(2.95,9.3,M.lens,0,-4.65,0,key,24)); g.add(cyl(1.6,.3,M.glassLens,0,-9.4,0,key,24)); if(ring){ const r=new THREE.Mesh(new THREE.TorusGeometry(3.5,.7,10,32),M.ring); r.rotation.x=Math.PI/2; r.position.y=-10.6; reg(key,r); g.add(r); g.userData.ring=r; } return g; }
+// 小相机 + 定焦镜头（Basler ace + 25 mm 镜头），镜头朝 −y
+function cameraSmall(key){ const g=new THREE.Group(); g.add(box(2.9,4.2,2.9,M.dark,0,2.1,0,key)); g.add(cyl(1.5,3.6,M.lens,0,-1.8,0,key,20)); g.add(cyl(1.1,.2,M.glassLens,0,-3.7,0,key,20)); return g; }
+// Keyence MD-U1000C 紫外打标头（18 kg，工作距离 189 mm；外形近似 300×150×170）+ 出光窗
+function laserHead(key){ const g=new THREE.Group(); g.add(box(30,17,15,M.keyence,0,8.5,0,key)); g.add(box(30.2,2,15.2,M.keyenceAccent,0,15,0,key)); g.add(cyl(3,.6,M.glassLens,8,-.3,0,key,28)); g.add(box(6,1,6,M.dark,8,.5,0,key)); g.add(box(4,3,6,M.dark,-14,6,8,key)); return g; }
+// Keyence SJ-H036A 离子风棒（棒长 340 mm；截面近似 30×40）
+function ionizerBar(len,key){ const g=new THREE.Group(); g.add(box(len,4,3,M.keyence,0,0,0,key)); g.add(box(len*.95,.4,.6,M.steel,0,-2.1,0,key)); for(let i=0;i<Math.floor(len/2);i++) g.add(cyl(.12,.9,M.steel,-len/2+1+i*2,-2.4,0,key,6)); g.add(box(2,1.2,1.2,M.dark,len/2-1,2.4,0,key)); return g; }
+// Keyence IG-028 对射式 CCD 激光测微计（量程 28 mm，重复 5 µm；收发头外形近似 70×30×20），光幕竖直穿过条带路径
+function laserMicrometer(key){ const g=new THREE.Group(); g.add(box(7,2,3,M.keyence,0,4.5,0,key)); g.add(box(7,2,3,M.keyence,0,-4.5,0,key)); g.add(box(6,.3,.4,M.redLens,0,3.4,0,key)); g.add(box(6,.3,.4,M.redLens,0,-3.4,0,key)); const beam=box(6.2,6.6,.08,std(0xff3030,{transparent:true,opacity:.25,emissive:0xff2020,emissiveIntensity:.8}),0,0,0); g.add(beam); return g; }
+// Keyence IL-100 激光位移传感器（基准距 100 mm，量程 75～130；头部近似 60×45×20）
+function dispSensor(key){ const g=new THREE.Group(); g.add(box(6,4.5,2,M.keyence,0,0,0,key)); g.add(cyl(.5,.3,M.redLens,-1.5,-2.3,0,key,10)); g.add(cyl(.9,.3,M.glassLens,1.5,-2.3,0,key,12)); return g; }
+// Keyence GL-R 安全光幕（3 mm 挤铝，9 mm 凹陷镜面；GL-R31F 全长 320）
+function lightCurtain(len,key){ const g=new THREE.Group(); g.add(box(2.8,len,2.8,M.dark,0,0,0,key)); g.add(box(.9,len-2,.3,M.yellow,0,0,1.5,key)); g.add(box(2.8,1,2.8,M.yellow,0,len/2+.5,0,key)); return g; }
+// Patlite LR6-302（Ø60，三层，直装）
+function towerLight(key){ const g=new THREE.Group(); g.add(cyl(1.2,10,M.steel,0,5,0,key,12)); g.add(cyl(3,2,M.dark,0,11,0,key,20)); const t=[M.lampG,M.lampY,M.lampR]; t.forEach((m,i)=>g.add(cyl(3,4,m,0,14+i*4.2,0,key,20))); g.add(cyl(3,.8,M.dark,0,26.9,0,key,20)); return g; }
+// SMC ZP2-TB08MBGN-H5 导电 NBR 波纹吸盘（Ø8）：两级波纹 + 接头
+function bellowsPad(key){ const g=new THREE.Group(); g.add(new THREE.Mesh(new THREE.CylinderGeometry(.25,.42,.35,14),M.rubber)); const b2=new THREE.Mesh(new THREE.CylinderGeometry(.42,.28,.3,14),M.rubber); b2.position.y=-.32; g.add(b2); g.add(cyl(.2,.7,M.steel,0,.5,0,key,10)); g.children.forEach(c=>reg(key,c)); return g; }
+// 取放吸头：铝板 + 8 个波纹吸盘（两排 ×4）+ SMC ZK2 真空发生器 + 分区阀
+function pickHead(key){ const g=new THREE.Group(); g.add(box(14,1,7,M.alu,0,0,0,key)); for(const z of [-2.6,2.6]) for(const x of [-5.25,-1.75,1.75,5.25]){ const p=bellowsPad(key); p.position.set(x,-.9,z); g.add(p); } g.add(box(3,2.2,2.4,M.festo,-5,1.6,0,key)); g.add(box(2,1.4,1.4,M.festoBlue,0,1.2,0,key)); return g; }
+// Advantest EVA100 Testing Unit Standard：363 W × 206 H × 472 D；前面板带把手、状态灯
+function evaBox(w,h,d,key){ const g=new THREE.Group(); g.add(box(w,h,d,M.eva,0,h/2,0,key)); g.add(box(w-2,h-2,.4,M.shellDark,0,h/2,d/2+.1,key)); g.add(box(w*.8,1,.4,M.evaBand,0,h-2,d/2+.3,key)); g.add(box(1.2,h*.5,1,M.steel,-w/2+2,h/2,d/2+.6,key)); g.add(box(1.2,h*.5,1,M.steel,w/2-2,h/2,d/2+.6,key)); g.add(box(.6,.6,.3,M.lampG,-w/2+5,h-4,d/2+.35,key)); return g; }
+// 电气柜：Omron NJ501 PLC + Panasonic A6 驱动器 + Festo CMMT 驱动 + 开关电源 + SMC 阀岛，透明门
+function elecCabinet(key){ const g=new THREE.Group(); g.add(box(70,110,40,M.cabinet,0,55,0,key)); g.add(box(66,104,.6,M.glass,0,55,20.2,key));
+  g.add(box(60,.6,1.2,M.din,0,98,16,key)); g.add(box(60,.6,1.2,M.din,0,78,16,key)); g.add(box(60,.6,1.2,M.din,0,52,16,key)); g.add(box(60,.6,1.2,M.din,0,28,16,key));
+  g.add(box(9,9.6,15,M.dark,-24,101,12,key)); for(let i=0;i<6;i++) g.add(box(4.4,9,10,M.shellDark,-14+i*5.2,101,12,key));          // NJ501-1300（90×96×150）+ NX IO
+  for(let i=0;i<4;i++) g.add(box(5,15,13,M.dark,-22+i*7,80,12,key)); for(let i=0;i<4;i++) g.add(box(4,13,10,M.festoBlue,10+i*5.2,80,12,key));   // A6 驱动 ×4 / Festo CMMT-ST ×4
+  g.add(box(12,12,12,M.shellDark,-20,54,12,key)); g.add(box(12,12,12,M.shellDark,-6,54,12,key)); g.add(box(20,5,8,M.festo,14,54,14,key));    // 电源 ×2 / SMC 阀岛
+  for(let i=0;i<10;i++) g.add(box(4,6,5,M.shellDark,-24+i*5.2,29,16,key)); return g; }
+// 花岗岩平台（济南青，1400×900×200）+ 钢焊接机架
+function graniteBase(w,d,key){ const g=new THREE.Group(); g.add(box(w,20,d,M.granite2,0,10,0,key)); for(const z of [-d*.3,0,d*.3]) g.add(box(w-6,.4,1.4,M.dark,0,20.1,z,key)); return g; }
+
 
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),std(0xcccccc,{roughness:.95}));
 floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
@@ -680,7 +746,7 @@ shell.add(box(64,52,2,M.glass,-90,140,98.5,'window'));
 shell.add(box(64,6,3,M.shell,-90,111,98.5,'shell'));
 shell.add(box(64,14,20,M.shellDark,-90,101,90,'port'));
 shell.add(box(64,2,20,M.shellDark,-90,80,90,'port'));
-for(const x of [-124,-56]) shell.add(box(2.4,30,2.4,M.curtain,x,94,92,'curtain'));
+for(const x of [-124,-56]){ const lc=lightCurtain(32,'curtain'); lc.position.set(x,96,92); shell.add(lc); }   // Keyence GL-R31F ×2（320 mm）
 // 操作模块前面板（x −50…10）
 shell.add(box(60,112,3,M.shell,-20,118,98.5,'shell'));
 shell.add(box(34,24,1.5,M.dark,-20,142,100.5,'monitor')); shell.add(box(31,21,.6,M.screen,-20,142,101.4,'monitor'));
@@ -694,17 +760,20 @@ function door(g,sign){ const w=58; g.add(box(w,104,2,M.shell,sign*w/2,114,0,'doo
 door(doorL,1); door(doorR,-1); shell.add(doorL,doorR);
 shell.add(box(120,8,3,M.shell,70,166,98.5,'shell')); shell.add(box(120,2,3,M.shell,70,61,98.5,'shell'));
 // 三色灯
-shell.add(cyl(1,12,M.steel,112,180,-80,'tower'));
-shell.add(cyl(2.4,4,M.lampG,112,188,-80,'tower',16),cyl(2.4,4,M.lampY,112,192.2,-80,'tower',16),cyl(2.4,4,M.lampR,112,196.4,-80,'tower',16));
+{ const t=towerLight('tower'); t.position.set(112,174,-80); shell.add(t); }   // Patlite LR6-302WJNW-RYG
 
-// ---- 内部平台与柜内设备
-machine.add(box(250,6,190,M.granite,0,21,0,'shell'));
-machine.add(box(30,26,26,M.dark,-100,38,-70,'vacuum')); machine.add(cyl(7,22,M.alu,-100,64,-70,'vacuum'));
-machine.add(box(50,30,24,M.navy,-40,40,-75,'controller'));
-// ---- EVA100 主机（后部机柜）
+// ---- 内部平台与柜内设备（真实器件）
+machine.add(box(250,6,190,M.steel,0,21,0,'shell'));                                   // 钢焊接机架台面
+{ const gb=graniteBase(140,90,'granite'); gb.position.set(-10,24,10); machine.add(gb); } // 花岗岩平台：XYθ 台与 C 型框架共坐
+{ const ec=elecCabinet('controller'); ec.position.set(-60,24,-75); machine.add(ec); }    // 电气柜（NJ501 / A6 / CMMT / 阀岛）
+// 真空：ORION KRF40 干式真空泵（载具吸附）+ SMC ZSE30A 真空开关
+machine.add(box(26,22,30,M.dark,-110,35,-70,'vacuum')); machine.add(cyl(6,20,M.alu,-110,56,-62,'vacuum')); machine.add(cyl(3,10,M.steel,-110,62,-78,'vacuum',12)); machine.add(box(3,3,2,M.festo,-96,50,-62,'vacuum'));
+// ---- EVA100：19 英寸机柜内 2 台 Testing Unit Standard（363×206×472）+ ACDC Box（140×206×462）+ 工作站 PC
 const evaG=new THREE.Group(); machine.add(evaG);
-function evaUnit(x){ const g=new THREE.Group(); g.position.x=x; g.add(box(32,76,40,M.eva,0,62,0,'eva')); g.add(box(32.4,4,40.4,M.evaBand,0,84,0,'eva')); g.add(box(20,10,.5,M.screen,0,66,20.3,'eva')); return g; }
-evaG.position.set(0,0,-76); const eva1=evaUnit(72), eva2=evaUnit(108); evaG.add(eva1,eva2);
+function evaUnit(x){ const g=new THREE.Group(); g.position.x=x; const b=evaBox(36.3,20.6,47.2,'eva'); b.position.y=52; g.add(b); return g; }
+function evaRack(x){ const g=new THREE.Group(); g.position.x=x; g.add(box(46,120,52,M.cabinet,0,84,-4,'eva')); g.add(box(44,2,50,M.shellDark,0,25,-4,'eva')); const ac=evaBox(14,20.6,46.2,'eva'); ac.position.set(-12,96,0); g.add(ac); g.add(box(20,18,46,M.shellDark,10,105,-2,'eva')); g.add(box(16,9,.5,M.screen,10,110,21.5,'eva')); g.add(box(42,14,44,M.dark,0,32,-2,'eva')); return g; }
+evaG.position.set(0,0,-76); const eva1=evaUnit(72), eva2=evaUnit(72), evaRackG=evaRack(72); eva2.position.y=22; evaG.add(evaRackG,eva1,eva2);
+evaG.add(box(46,2,52,M.shellDark,72,27,-80,'eva'));
 
 // ---- 工位坐标
 const LINE_Z=40;                      // 换片位 / 料仓所在的前排
@@ -715,14 +784,20 @@ const CAMX=PROBE.x-22;                // 相机位置（针卡旁）
 const magPos={in:{x:-66,z:LINE_Z}, ok:{x:-92,z:LINE_Z}, ng:{x:-116,z:LINE_Z}};
 const MARK={x:-46,z:LINE_Z}, PAPER_Z=18, paperPos={in:{x:-70,z:PAPER_Z}, out:{x:-104,z:PAPER_Z}};
 const STACK_TOP=92.5, LAYER=.3;                 // 电梯式：料面高度恒定，料堆随数量升降
-function stacker(p,key){ const g=new THREE.Group(); g.position.set(p.x,0,p.z); g.add(box(20,66,1.6,M.alu,0,88,-5.6,key)); g.add(box(20,66,1.6,M.alu,0,88,5.6,key)); g.add(box(1.6,66,12,M.alu,-10,88,0,key)); g.add(box(22,3,14,M.dark,0,55,0,key)); g.add(box(8,7,8,M.dark,0,50,0,key)); g.add(cyl(.8,36,M.steel,-8.6,73,0,key,10)); machine.add(g); return g; }
+function stacker(p,key){ const g=new THREE.Group(); g.position.set(p.x,0,p.z);
+  g.add(box(20,44,1.6,M.alu,0,77,-5.6,key)); g.add(box(20,44,1.6,M.alu,0,77,5.6,key)); g.add(box(22,3,14,M.dark,0,55,0,key));      // 导柱侧板（手动调宽，440 高）+ 底板
+  const z=screwModule(42,3.3,3.3,6,key,M.thk); z.rotation.z=Math.PI/2; z.position.set(-11.6,78,0); g.add(z);                       // THK KR33 竖直模组（升降）
+  const m=servo(6,7.2,key); m.rotation.x=Math.PI/2; m.position.set(-11.6,57,0); g.add(m);                                           // Oriental AZM66 步进（60 方，72 长）
+  g.add(box(3,1.2,12,M.alu,-9.6,STACK_TOP-1.2,0,key));                                                                               // 料面托板连接
+  const il=dispSensor(key); il.position.set(0,STACK_TOP+10.5,-7.5); g.add(il);                                                       // Keyence IL-100 料面测高（基准距 100 mm）
+  machine.add(g); return g; }
 stacker(magPos.in,'inMag'); stacker(magPos.ok,'okMag'); stacker(magPos.ng,'ngMag');
 function paperBin(p,key){ const g=new THREE.Group(); g.position.set(p.x,0,p.z); g.add(box(18,30,1.2,M.alu,0,95,-4.6,key)); g.add(box(18,30,1.2,M.alu,0,95,4.6,key)); g.add(box(1.2,30,10,M.alu,-9,95,0,key)); g.add(box(20,2,12,M.dark,0,80,0,key)); machine.add(g); return g; }
 paperBin(paperPos.in,'paperIn'); paperBin(paperPos.out,'paperOut');
-// 打标缓冲台（真空平台）+ 激光打标头
-machine.add(box(18,2,10,M.ceramic,MARK.x,99,MARK.z,'markStage')); machine.add(box(4,6,4,M.dark,MARK.x-8,96,MARK.z,'markStage'));
-machine.add(box(6,8,6,M.dark,MARK.x,134,MARK.z,'laser')); machine.add(box(3,3,3,M.dark,MARK.x+4.5,135,MARK.z,'laser')); machine.add(cyl(.9,1.2,M.ring,MARK.x+4.5,133,MARK.z,'laser',12)); machine.add(cyl(1.2,3,M.steel,MARK.x,128.5,MARK.z,'laser',12)); machine.add(box(3,40,3,M.alu,MARK.x,150,MARK.z-8,'laser')); machine.add(box(3,3,8,M.alu,MARK.x,138,MARK.z-4,'laser'));
-const laserBeam=cyl(.25,27,std(0xff3030,{emissive:0xff2020,emissiveIntensity:1.5,transparent:true,opacity:.8}),MARK.x,113.5,MARK.z,undefined,8); laserBeam.visible=false; machine.add(laserBeam);
+// 打标缓冲台（真空平台）+ Keyence MD-U1000C 紫外打标头（WD 189 mm）+ 定位相机（Basler + 25 mm）
+machine.add(box(18,2,10,M.ceramic,MARK.x,99,MARK.z,'markStage')); machine.add(box(4,6,4,M.dark,MARK.x-8,96,MARK.z,'markStage')); machine.add(box(3,3,2,M.festo,MARK.x+8,97.5,MARK.z-6,'markStage'));
+{ const lh=laserHead('laser'); lh.position.set(MARK.x-8,118.9,MARK.z); machine.add(lh); machine.add(box(3,52,3,M.alu,MARK.x,150,MARK.z-12,'laser')); machine.add(box(3,3,12,M.alu,MARK.x,132,MARK.z-6,'laser')); const mc=cameraSmall('laser'); mc.position.set(MARK.x+6,125,MARK.z+5); machine.add(mc); }
+const laserBeam=cyl(.25,18.9,std(0xff3030,{emissive:0xff2020,emissiveIntensity:1.5,transparent:true,opacity:.8}),MARK.x,109.5,MARK.z,undefined,8); laserBeam.visible=false; machine.add(laserBeam);
 const stackMat=std(0x2d6a46), paperMat=std(0xf4f1e8,{roughness:.9});
 const stripGeo=new THREE.BoxGeometry(14.2,.14,6.6), paperGeo=new THREE.BoxGeometry(14.6,.08,7);
 const mkInst=(mat,geo)=>{ const m=new THREE.InstancedMesh(geo,mat,100); m.count=0; machine.add(m); return m; };
@@ -731,40 +806,50 @@ const _m=new THREE.Matrix4();
 function fillStack(inst,paper,n,p){ n=Math.min(n,100); inst.count=n; paper.count=n; for(let i=0;i<n;i++){ const y=STACK_TOP-(n-1-i)*LAYER; _m.makeTranslation(p.x,y,p.z); inst.setMatrixAt(i,_m); _m.makeTranslation(p.x,y-LAYER/2,p.z); paper.setMatrixAt(i,_m);} inst.instanceMatrix.needsUpdate=true; paper.instanceMatrix.needsUpdate=true; }
 function fillBin(inst,n,p){ n=Math.min(n,100); inst.count=n; for(let i=0;i<n;i++){ _m.makeTranslation(p.x,81.2+i*.12,p.z); inst.setMatrixAt(i,_m);} inst.instanceMatrix.needsUpdate=true; }
 const binTop=n=>81.2+n*.12+.3;
-// 取放 X 轴梁：上料在 z=LINE_Z−6，下料在 z=LINE_Z+6，吸头臂伸到 z=LINE_Z
-machine.add(box(50,6,6,M.alu,-48,136,LINE_Z-6,'pnpLoad')); machine.add(box(6,56,6,M.alu,-76,108,LINE_Z-6,'pnpLoad'));
-machine.add(box(100,6,6,M.alu,-73,142,LINE_Z+6,'pnpUnload')); machine.add(box(6,62,6,M.alu,-121,111,LINE_Z+6,'pnpUnload'));
-const carL=new THREE.Group(); machine.add(carL); carL.add(box(10,8,8,M.dark,0,136,LINE_Z-6,'pnpLoad')); carL.add(box(3,3,8,M.steel,0,131,LINE_Z-2,'pnpLoad')); const zL=box(3,28,3,M.steel,0,118,LINE_Z,'pnpLoad'); carL.add(zL); const padL=box(12,1,5,M.rubber,0,104,LINE_Z,'pnpLoad'); carL.add(padL);
-const carU=new THREE.Group(); machine.add(carU); carU.add(box(10,8,8,M.dark,0,142,LINE_Z+6,'pnpUnload')); carU.add(box(3,3,8,M.steel,0,137,LINE_Z+2,'pnpUnload')); const zU=box(3,34,3,M.steel,0,121,LINE_Z,'pnpUnload'); carU.add(zU); const padU=box(12,1,5,M.rubber,0,104,LINE_Z,'pnpUnload'); carU.add(padU);
-machine.add(box(5,5,8,M.reader,-47,124,LINE_Z-10,'gauge')); machine.add(box(5,2,8,M.reader,-47,109,LINE_Z-10,'gauge'));   // 对射激光测厚（双片 / 带纸检测）
-// 垫纸取放：上料侧在料仓与回收仓之间沿 z 往返；下料侧从供给仓到 OK / NG 仓
-machine.add(box(3,3,34,M.alu,-68,150,(LINE_Z+PAPER_Z)/2,'paperPick')); machine.add(box(3,3,34,M.alu,paperPos.out.x,150,(LINE_Z+PAPER_Z)/2,'paperPick')); machine.add(box(30,3,3,M.alu,paperPos.out.x,150,LINE_Z,'paperPick'));
-function paperPicker(){ const g=new THREE.Group(); machine.add(g); g.add(box(6,5,6,M.dark,0,147,0,'paperPick')); const z=box(2,40,2,M.steel,0,125,0,'paperPick'); g.add(z); const pad=box(10,.6,5,M.rubber,0,105,0,'paperPick'); g.add(pad); const sheet=new THREE.Mesh(paperGeo,paperMat); sheet.visible=false; machine.add(sheet); return {g,z,pad,sheet}; }
+// 取放轴：上料 Festo ELGC-TB-KF-60-400（同步带，1.5 m/s，±0.1 mm）；下料 Festo EGC-70-1000-TB-KF；Z 为 EGSC-BS-KF-45-50 迷你滑台（滚珠丝杠，±0.015 mm）
+{ const ax=beltAxis(50,6,5.5,11,'pnpLoad'); ax.position.set(-48,133,LINE_Z-6); machine.add(ax); const m=servo(6,9,'pnpLoad'); m.rotation.y=Math.PI/2; m.position.set(-73,135.8,LINE_Z-6); machine.add(m); machine.add(box(6,56,6,M.alu,-76,108,LINE_Z-6,'pnpLoad')); machine.add(box(6,56,6,M.alu,-26,108,LINE_Z-6,'pnpLoad')); }
+{ const ax=beltAxis(100,7,6.5,13,'pnpUnload'); ax.position.set(-73,139,LINE_Z+6); machine.add(ax); const m=servo(6,9,'pnpUnload'); m.rotation.y=Math.PI/2; m.position.set(-123,142.3,LINE_Z+6); machine.add(m); machine.add(box(6,62,6,M.alu,-121,111,LINE_Z+6,'pnpUnload')); machine.add(box(6,62,6,M.alu,-25,111,LINE_Z+6,'pnpUnload')); }
+const carL=new THREE.Group(); machine.add(carL); carL.add(box(11,1.4,5.4,M.alu,0,139.4,LINE_Z-6,'pnpLoad')); { const ms=miniSlideZ(4.5,15,'pnpLoad'); ms.position.set(0,139,LINE_Z-1.5); carL.add(ms); } const zL=box(2.5,28,2.5,M.steel,0,118,LINE_Z,'pnpLoad'); carL.add(zL); const padL=pickHead('pnpLoad'); padL.position.set(0,104,LINE_Z); carL.add(padL);
+const carU=new THREE.Group(); machine.add(carU); carU.add(box(13,1.4,6.3,M.alu,0,146.4,LINE_Z+6,'pnpUnload')); { const ms=miniSlideZ(4.5,15,'pnpUnload'); ms.position.set(0,146,LINE_Z+1.5); carU.add(ms); } const zU=box(2.5,34,2.5,M.steel,0,121,LINE_Z,'pnpUnload'); carU.add(zU); const padU=pickHead('pnpUnload'); padU.position.set(0,104,LINE_Z); carU.add(padU);
+{ const ig=laserMicrometer('gauge'); ig.position.set(-47,103.6,LINE_Z-10); machine.add(ig); machine.add(box(1.6,14,1.6,M.alu,-47,96,LINE_Z-13,'gauge')); }   // Keyence IG-028 对射测厚：条带从上下头之间经过
+// 离子风棒 Keyence SJ-H036A ×2：上料仓上方、取放路径上方
+{ const b1=ionizerBar(34,'ionizer'); b1.position.set(magPos.in.x,112,LINE_Z+9.5); machine.add(b1); const b2=ionizerBar(34,'ionizer'); b2.position.set(-50,118,LINE_Z-12); machine.add(b2); }
+// 垫纸取放：Festo ELGC-TB-KF-45-300 ×2 + EGSC-BS-KF-33-50，上料侧沿 z 往返，下料侧从供给仓到 OK / NG 仓
+{ const a1=beltAxis(34,4.5,4.2,8,'paperPick'); a1.rotation.y=Math.PI/2; a1.position.set(-68,148,(LINE_Z+PAPER_Z)/2); machine.add(a1); const a2=beltAxis(34,4.5,4.2,8,'paperPick'); a2.rotation.y=Math.PI/2; a2.position.set(paperPos.out.x,148,(LINE_Z+PAPER_Z)/2); machine.add(a2); const a3=beltAxis(30,4.5,4.2,8,'paperPick'); a3.position.set(paperPos.out.x,148,LINE_Z); machine.add(a3); }
+function paperPicker(){ const g=new THREE.Group(); machine.add(g); const ms=miniSlideZ(3.3,12,'paperPick'); ms.position.set(0,152,0); g.add(ms); const z=box(2,40,2,M.steel,0,125,0,'paperPick'); g.add(z); const pad=new THREE.Group(); pad.add(box(10,.6,5,M.alu,0,0,0,'paperPick')); for(const x of [-3.5,0,3.5]){ const p=bellowsPad('paperPick'); p.position.set(x,-.7,0); pad.add(p); } pad.position.y=105; g.add(pad); const sheet=new THREE.Mesh(paperGeo,paperMat); sheet.visible=false; machine.add(sheet); return {g,z,pad,sheet}; }
 const ppU=paperPicker(), ppD=paperPicker();
 function setPaperPicker(pp,x,z,d,vis){ pp.g.position.set(x,0,z); pp.z.position.y=125-d/2; pp.z.scale.y=1+d/40; pp.pad.position.y=105-d; pp.sheet.visible=vis; if(vis) pp.sheet.position.set(x,105-d-.4,z); }
-// ---- XYθ 载具台
-const xyBase=box(130,6,16,M.steel,5,89,20,'xy'); machine.add(xyBase);          // 长行程 X 轴（z 20 居中，覆盖 z 0…40）
-const xCar=new THREE.Group(); machine.add(xCar);                                 // X 滑块 + Y 轴
-xCar.add(box(34,5,56,M.alu,0,93.5,20,'xy'));
-const carrier=new THREE.Group(); xCar.add(carrier);                               // Y 滑块 + 载具
-carrier.add(box(22,3,14,M.steel,0,97.5,0,'xy'));
+// ---- XYθ 载具台：X 长行程 HIWIN KK10020P（100 mm 宽，行程约 1000 mm，重复 ±3 µm，带光栅尺）→ Y HIWIN KK8610P-640（86 宽，行程 510）→ θ Suruga KRW06360C-Z（Ø60，0.004°/步）→ 真空载具
+// 布局：X 模组沿 x 放在 z = 42（花岗岩上），Y 模组沿 z（z 10…74），载具由 Y 滑座经 θ 台 + 立柱 + 悬臂（+z 侧 220 mm）托起，悬臂从下针卡上方跨过，Y 模组本体永远不进入下针卡正下方
+const xyBase=screwModule(130,10,8,34,'xy',M.hiwin); xyBase.position.set(5,44,42); machine.add(xyBase);
+{ const m=servo(6,11,'xy'); m.rotation.y=Math.PI/2; m.position.set(-62,48.4,42); machine.add(m); machine.add(box(130,.6,1.2,M.steel,5,52.4,47.6,'xy')); }   // Panasonic MINAS A6 400 W + 光栅尺
+const xCar=new THREE.Group(); machine.add(xCar);
+const yMod=screwModule(64,8.6,6.3,22,'xy',M.hiwin); yMod.rotation.y=Math.PI/2; yMod.position.set(0,54.6,42); xCar.add(yMod); const yCar=yMod.userData.car;
+{ const m=servo(6,11,'xy'); m.rotation.y=Math.PI; m.position.set(0,58.1,74.5); xCar.add(m); }
+const carrier=new THREE.Group(); xCar.add(carrier);
+const BRIDGE_Z=22;                                                                                                                 // 载具中心到 Y 滑座中心的偏距（+z 侧）
+carrier.add(cyl(3,3,M.dark,0,64.4,BRIDGE_Z,'xy',32)); carrier.add(cyl(3.2,.8,M.alu,0,66.3,BRIDGE_Z,'xy',32)); { const m=servo(4.2,6,'xy'); m.rotation.y=Math.PI/2; m.position.set(-3.2,64.4,BRIDGE_Z); carrier.add(m); }   // θ 台 Suruga KRW06360C-Z（偏心，由 XY 补偿）
+carrier.add(box(14,30,8,M.steel,0,81.7,BRIDGE_Z,'xy'));                                                                            // 立柱
+carrier.add(box(14,2.4,30,M.steel,0,97.2,BRIDGE_Z/2-2,'xy'));                                                                      // 悬臂，从下针卡 Pogo 块上方跨到载具中心
 carrier.add(box(16.4,1,1.2,M.alu,0,99.5,-4.1,'carrier')); carrier.add(box(16.4,1,1.2,M.alu,0,99.5,4.1,'carrier'));
 carrier.add(box(1.2,1,9.4,M.alu,-7.6,99.5,0,'carrier')); carrier.add(box(1.2,1,9.4,M.alu,7.6,99.5,0,'carrier'));
 for(let i=-2;i<=2;i++) carrier.add(box(.5,.8,8.6,M.alu,i*2.9,99.5,0,'carrier'));
 carrier.add(box(2.4,1.6,4,M.clamp,-9.2,100.1,0,'clamp')); carrier.add(box(2.4,1.6,4,M.clamp,9.2,100.1,0,'clamp'));
+carrier.add(box(3,3,2,M.festo,-9,97.5,-6,'carrier'));                                                                              // SMC ZSE30A 真空开关
+{ const up=cameraAssy('upcam',false); up.rotation.x=Math.PI; up.position.set(9,78.5,BRIDGE_Z-4); carrier.add(up); carrier.add(box(2,2,6,M.alu,9,93,BRIDGE_Z-1,'upcam')); }   // 上视相机（针尖检查，镜头朝上）：Basler + Computar TEC-M55MPW，随载具进针卡下方
 const STRIP_Y=100.12;
-// ---- C 型框架（开口朝前）、上下针卡单元
+// ---- C 型框架（铸铁 / 钢焊接，开口朝前）、上下针卡单元（THK KR33 Z 轴 + Panasonic A6 200 W + Futek LCM300 力传感器）
 const cframe=new THREE.Group(); machine.add(cframe);
 cframe.add(box(40,130,22,M.shell,PROBE.x,92,-50,'cframe'));                     // 立柱（后方）
 cframe.add(box(40,14,62,M.shell,PROBE.x,152,-20,'cframe'));                      // 上臂
 cframe.add(box(40,12,62,M.shell,PROBE.x,34,-20,'cframe'));                       // 下臂
-// 相机（上臂前端，针卡旁）
-cframe.add(box(6,4,30,M.alu,CAMX,144,PROBE.z-8,'camera')); cframe.add(box(5,8,5,M.dark,CAMX,131,PROBE.z,'camera')); cframe.add(cyl(1.5,10,M.steel,CAMX,140,PROBE.z,'camera'));
-const ringLight=new THREE.Mesh(new THREE.TorusGeometry(3.2,.6,10,32),M.ring); ringLight.rotation.x=Math.PI/2; ringLight.position.set(CAMX,126,PROBE.z); reg('camera',ringLight); cframe.add(ringLight);
-// 上针卡单元：Z 滑座 → 测试头 → 卡座 → 针卡 → 针块 → 压板
+// 对位相机（上臂前端，针卡旁）：Basler acA2500-14gm + Computar TEC-M55MPW 远心镜头 + CCS 环形光
+cframe.add(box(6,4,30,M.alu,CAMX,144,PROBE.z-8,'camera'));
+const camAssy=cameraAssy('camera',true); camAssy.position.set(CAMX,124,PROBE.z); cframe.add(camAssy); const ringLight=camAssy.userData.ring; cframe.add(box(2,14,2,M.alu,CAMX,135,PROBE.z-8,'camera')); cframe.add(box(2,2,8,M.alu,CAMX,128,PROBE.z-4,'camera'));   // 镜头底 114.4，WD 140 mm → 对焦在条带面 100.4
+// 上针卡单元：KR33 Z 轴（挂在上臂下）→ 力传感器 → 测试头 → 卡座 → 针卡
 const topUnit=new THREE.Group(); topUnit.position.set(PROBE.x,145,PROBE.z); cframe.add(topUnit);
-topUnit.add(box(14,10,14,M.alu,0,-5,-20,'topHolder'));                           // Z 滑座（挂在上臂下）
-topUnit.add(box(14,4,30,M.alu,0,-12,-6,'topHolder'));
+{ const z=screwModule(20,3.3,3.3,8,'topHolder',M.thk); z.rotation.z=Math.PI/2; z.position.set(0,-6,-20); topUnit.add(z); const m=servo(6,9,'topHolder'); m.rotation.x=Math.PI/2; m.position.set(0,4.4,-20); topUnit.add(m); }
+topUnit.add(box(14,4,30,M.alu,0,-12,-6,'topHolder')); topUnit.add(cyl(1.25,1.3,M.steel,0,-13.6,-6,'topHolder',16));          // Futek LCM300（Ø25）
 topUnit.add(box(36,20,36,M.dark,0,-24,0,'testhead'));                            // 上测试头
 topUnit.add(box(30,3,30,M.cardHolder,0,-35.5,0,'topHolder'));                    // 卡座 / Pogo tower
 const topCard=new THREE.Group(); topUnit.add(topCard); topCard.position.y=-38;
@@ -775,9 +860,10 @@ topCard.add(box(10.4,1.6,1.2,M.navy,0,-1.4,-7.6,'topCard')); topCard.add(box(10.
 for(let side=-1;side<=1;side+=2) for(let i=0;i<12;i++){ const z=-6.3+i*1.15; const len=side*i%2?3.2:4.2; const nd=box(len,.14,.14,M.gold,side*(4.0-len/2),-2.2-0.7*(len/4.2),z,'topCard'); nd.rotation.z=side*0.42; const tip=box(.35,.9,.14,M.gold,side*(4.0-len)-side*.1,-3.95,z,'topCard'); topCard.add(nd); topCard.add(tip); }
 topCard.add(box(6,1.6,6,M.navy,10,-1.6,-10,'ina'));
 const stripper=new THREE.Group(); topCard.add(stripper);   // 悬臂针卡无上压板，占位组保留给动画
-// 下针卡单元：下臂 → Z 滑座 → 测试头 → 卡座 → 针卡 → Pogo 块
+// 下针卡单元：下臂 → KR33 Z 轴 → 力传感器 → 测试头 → 卡座 → 针卡 → Pogo 块
 const botUnit=new THREE.Group(); botUnit.position.set(PROBE.x,40,PROBE.z); cframe.add(botUnit);
-botUnit.add(box(14,10,14,M.alu,0,5,-20,'botHolder')); botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder'));
+{ const z=screwModule(20,3.3,3.3,8,'botHolder',M.thk); z.rotation.z=Math.PI/2; z.position.set(0,6,-20); botUnit.add(z); const m=servo(6,9,'botHolder'); m.rotation.x=-Math.PI/2; m.position.set(0,-4.4,-20); botUnit.add(m); }
+botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder')); botUnit.add(cyl(1.25,1.3,M.steel,0,13.6,-6,'botHolder',16));
 const botHead=box(36,20,36,M.dark,0,24,0,'testhead'); botUnit.add(botHead);
 botUnit.add(box(30,3,30,M.cardHolder,0,35.5,0,'botHolder'));
 // 载具托块：下针卡两侧，随下 Z 升起托住载具底座（有限元：2 mm 载具下沉 31 µm → 0.5 µm）
@@ -912,7 +998,7 @@ function anim(dt){
       cx=PROBE.x-lerp(c0.x,c1.x,q); cz=PROBE.z-lerp(c0.z,c1.z,q); }
     else if(ph==='OUT'){ const last=tdCenter(cfg,cfg.N-1); const q=ease(p); cx=lerp(PROBE.x-last.x,EXCH.x,q); cz=lerp(PROBE.z-last.z,EXCH.z,q); }
   } else if(S.clean){ cx=PROBE.x; cz=PROBE.z; }
-  xCar.position.x=cx; carrier.position.z=cz;
+  xCar.position.x=cx; carrier.position.z=cz; yCar.position.x=20-cz;
   // 载具上的条带（换片时被下料吸头取走后隐藏）
   const cs=S.carrier; carStrip.mesh.visible=!!cs&&cs.placed&&!(ph==='EXCH'&&seg&&cs.done&&S.pt>=.3); if(cs&&cs.texDirty){ paintStrip(carStrip,cs.res); cs.texDirty=false; } if(!cs&&carStrip.cur){ carStrip.cur=null; }
   // ---- 针卡 Z
@@ -977,7 +1063,7 @@ function anim(dt){
   const bl=.55+.45*Math.sin(performance.now()/180);
   M.lampG.emissiveIntensity=st==='run'?1:0; M.lampY.emissiveIntensity=st==='wait'?1:0; M.lampR.emissiveIntensity=st==='alarm'?bl:0;
   fillStack(inStack,inPaper,S.input,magPos.in); fillStack(okStack,okPaper,S.ok,magPos.ok); fillStack(ngStack,ngPaper,S.ng,magPos.ng); fillBin(binIn,S.paperIn,paperPos.in); fillBin(binOut,S.paperOut,paperPos.out);
-  eva2.visible=cfg.ch===512; eva1.position.x=cfg.ch===512?72:90; botHead.visible=cfg.ch===512; cableBot.visible=cfg.ch===512;
+  eva2.visible=cfg.ch===512; botHead.visible=cfg.ch===512; cableBot.visible=cfg.ch===512;
   S.agv+=((S.agvOn?1:0)-S.agv)*Math.min(1,dt*.8); agv.visible=S.agv>.01; agv.position.x=lerp(-230,-166,ease(S.agv));
   if(maintHover&&PARTS[maintHover]){ const k=.25+.25*Math.sin(performance.now()/160); for(const m of PARTS[maintHover].meshes){ if(m.material.userData&&m.material.userData.base) m.material.emissiveIntensity=k; } }
   updateLabels();
@@ -1008,6 +1094,50 @@ function updateTakt(){
   document.querySelectorAll('#microBar .sg').forEach(s=>s.classList.toggle('dim',!!mc&&s.dataset.k!==mc));
   document.querySelectorAll('#lanes .sg[data-k]').forEach(s=>{ const k=s.dataset.k; let on=true; if(S.segs){ on=k===S.phase||(k==='UNL'&&S.ct>=.3&&S.ct<6.4&&!!(S.outgoing||(S.carrier&&S.carrier.done)))||(k==='MARK'&&S.ct>=1.95&&S.ct<4.2&&!!S.outgoing)||(k==='LD'&&S.phase==='EXCH'&&S.pt>=.9&&!!S.incoming)||(k==='PAPER'&&S.ct>=4.5&&S.ct<8&&(!!S.incoming||S.paperDue)); } s.classList.toggle('dim',!!S.segs&&!on); });
 }
+
+
+/* ---------------- 面板：器件 BOM ---------------- */
+const BOM=[
+  ['eva','测试源','Advantest EVA100 Testing Unit Standard','2（512ch）/ 1','363×206×472 mm，PPMU/DPS/DGT；ACDC Box 140×206×462'],
+  ['topCard','上针卡','定制 环氧环悬臂式铼钨针卡','1 + 备 1','Ø0.20 / Ø0.30 mm 针，6 gf @ 75 µm，窗口 17×64 mm，Al 加强环'],
+  ['botCard','下针卡','定制 Pogo 针卡（LEENO G026）','1 + 备 1','G026：0.50 pitch，Ø0.26，18 g @ 0.7 mm；每颗 4 针'],
+  ['ina','Kelvin 前置板','雯澜新 INA 前端板','1','4 路差分 ×1/×100，3:1 复用进 DGT'],
+  ['xy','X 长行程轴','HIWIN KK10020P 滚珠丝杠模组','1','100 mm 宽，行程约 1000 mm，重复 ±3 µm，加光栅尺'],
+  ['xy','Y 轴','HIWIN KK8610P-640A1','1','86 mm 宽，导轨 640，行程 510 mm，重复 ±3 µm'],
+  ['xy','θ 轴','Suruga Seiki KRW06360C-Z','1','Ø60 蜗轮旋转台，0.004°/步（≤ 0.5 arcmin）'],
+  ['xy','XY 伺服','Panasonic MINAS A6 MHMF042L1U2 + 驱动','2','400 W，60 mm 法兰，EtherCAT'],
+  ['topHolder','Z 轴（上 / 下）','THK KR33 滚珠丝杠模组 + Panasonic A6 200 W','2','33 mm 宽，行程 100 mm，重复 ±3 µm'],
+  ['topHolder','针力传感器','Futek LCM300','2','Ø24.9 mm 微型拉压式，17-4 PH，量程 ≤ 1 kN'],
+  ['camera','对位相机','Basler acA2500-14gm + Computar TEC-M55MPW + CCS 环形光','1','5 MP 2.2 µm；远心 Ø59×93，WD 140 mm'],
+  ['upcam','上视相机','Basler acA2500-14gm + Computar TEC-M55MPW','1','针尖检查、相机–针卡标定'],
+  ['carrier','真空载具','定制 网格镂空载具（不锈钢 2 mm）','2','筋条带吸孔，产品专用快换；SMC ZSE30A 真空开关'],
+  ['rail','载具托块','定制','2','随下 Z 升起托住载具（下沉 31 → 0.5 µm）'],
+  ['granite','花岗岩平台','济南青 1400×900×200','1','XYθ 台与 C 型框架共坐'],
+  ['cframe','C 型框架','铸铁 / 钢焊接，时效处理','1','上下 Z 同框，刚度 ≥ 50 N/µm'],
+  ['inMag','料仓升降','THK KR33 + Oriental Motor AZM66 + Keyence IL-100','4 仓','60 mm 方绝对式步进；IL-100 基准距 100，重复 4 µm'],
+  ['pnpLoad','上料 X 轴','Festo ELGC-TB-KF-60-400','1','同步带，1.5 m/s，15 m/s²，±0.1 mm'],
+  ['pnpUnload','下料 X 轴','Festo EGC-70-1000-TB-KF','1','同步带，行程 1000 mm'],
+  ['pnpLoad','取放 Z 轴','Festo EGSC-BS-KF-45-50','2','滚珠丝杠迷你滑台，50 mm，0.6 m/s，±0.015 mm'],
+  ['pnpLoad','吸盘','SMC ZP2-TB08MBGN-H5','16','Ø8 波纹，导电 NBR'],
+  ['pnpLoad','真空发生器','SMC ZK2A','4','取放 / 垫纸吸头各一'],
+  ['paperPick','垫纸轴','Festo ELGC-TB-KF-45-300 + EGSC-BS-KF-33-50','3 + 2','同步带轴 + 迷你滑台'],
+  ['gauge','双片检测','Keyence IG-028 + IG-1000','1 套','对射 CCD 激光测微计，量程 28 mm，重复 5 µm'],
+  ['ionizer','离子风棒','Keyence SJ-H036A','2','棒长 340 mm，自传感式'],
+  ['laser','激光打标','Keyence MD-U1000C','1','3 轴紫外，125×125 mm，WD 189 mm，头 18 kg'],
+  ['laser','打标定位相机','Basler acA2500-14gm + 25 mm 镜头','1','读条带两角 Mark，±50 µm'],
+  ['vacuum','载具真空泵','ORION KRF40','1','干式，供载具筋条吸孔'],
+  ['controller','PLC / 运动控制','Omron NJ501-1300','1','EtherCAT，90×96×150 mm，满足美维 CJ2M 以上要求'],
+  ['controller','取放驱动','Festo CMMT-ST','4','EtherCAT 步进 / 伺服驱动'],
+  ['curtain','安全光幕','Keyence GL-R31F','1 对','手指保护 ø14，全长 320 mm'],
+  ['tower','三色灯','Patlite LR6-302WJNW-RYG','1','Ø60，三层，带蜂鸣'],
+  ['estop','急停 / 按钮','IDEC XA1E / Schneider XB4','1 套','红黑黄急停，带防护盖'],
+  ['monitor','机台 PC / 显示','Advantech IPC-610 + 24 英寸触控屏','1','Win10/11 专业版，双网卡，UPS']
+];
+const _bb=new THREE.Box3(), _bc=new THREE.Vector3(), _bs=new THREE.Vector3();
+function focusPart(key){ const P=PARTS[key]; if(!P) return; _bb.makeEmpty(); for(const m of P.meshes){ if(!m.visible&&!S.hideShell) continue; _bb.expandByObject(m); } if(_bb.isEmpty()) return; _bb.getCenter(_bc); _bb.getSize(_bs); const r=Math.max(_bs.x,_bs.y,_bs.z,8); const dir=new THREE.Vector3().subVectors(camera.position,controls.target).normalize(); if(dir.y<.25) dir.y=.25; dir.normalize(); const p1=_bc.clone().addScaledVector(dir,r*2.4+14); camAnim={t:0,p0:camera.position.clone(),t0:controls.target.clone(),p1,t1:_bc.clone()}; if(!S.ghost&&!S.hideShell&&!['shell','doors','window','port','tower','curtain','estop','monitor','lampBar'].includes(key)) setGhost(true); }
+function buildBom(){ const tb=$('bomTable').querySelector('tbody'); tb.innerHTML=BOM.map((r,i)=>`<tr data-k="${r[0]}" data-i="${i}"><td>${i+1}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+  tb.addEventListener('click',ev=>{ const tr=ev.target.closest('tr'); if(!tr) return; const key=tr.dataset.k; tb.querySelectorAll('tr').forEach(x=>x.classList.toggle('on',x===tr)); if(pinned) setHighlight(pinned,false); pinned=key; setHighlight(key,true); showInfo(key); focusPart(key); }); }
+buildBom();
 
 /* ---------------- 面板：Map ---------------- */
 const mapSvg=$('map'); const mapCells=[];
@@ -1154,8 +1284,8 @@ $('views').addEventListener('click',ev=>{ const b=ev.target.closest('button'); i
 $('btnGhost').addEventListener('click',()=>setGhost(!S.ghost));
 $('btnHide').addEventListener('click',()=>setShellHidden(!S.hideShell));
 $('btnExplode').addEventListener('click',()=>{ S.explode=!S.explode; $('btnExplode').classList.toggle('on',S.explode); if(S.explode&&S.view!=='section') setView('section'); });
-document.querySelector('.tabs').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.tab=b.dataset.t; document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); for(const t of ['run','mat','test','maint','cmp']) $('tab-'+t).hidden=t!==S.tab;
-  measDirty=histDirty=true; const vmap={run:'inside',mat:'lul',test:'section',maint:'station',cmp:'overview'}; setView(vmap[S.tab]); if(S.tab!=='test'&&S.explode){ S.explode=false; $('btnExplode').classList.remove('on'); } uiAcc=1; });
+document.querySelector('.tabs').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; S.tab=b.dataset.t; document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); for(const t of ['run','mat','test','maint','cmp','bom']) $('tab-'+t).hidden=t!==S.tab;
+  measDirty=histDirty=true; const vmap={run:'inside',mat:'lul',test:'section',maint:'station',cmp:'overview'}; if(vmap[S.tab]) setView(vmap[S.tab]); if(S.tab!=='test'&&S.explode){ S.explode=false; $('btnExplode').classList.remove('on'); } uiAcc=1; });
 $('btnRefill').addEventListener('click',()=>{ S.input=Math.min(100,S.input+100); S.paperOut=100; S.planned+=100; if(S.phase==='WAIT') S.phase='IDLE'; log('切换到另一上料仓：+100 片，垫纸供给仓补满','ok'); });
 $('btnEmptyOut').addEventListener('click',()=>{ log(`下料仓清空：OK ${S.ok} 片、NG ${S.ng} 片转入下道工序，垫纸回收仓清空`); S.ok=0; S.ng=0; S.paperIn=0; });
 $('btnAgv').addEventListener('click',()=>{ S.agvOn=!S.agvOn; $('btnAgv').classList.toggle('on',S.agvOn); log(S.agvOn?'AGV 到位，对接料仓舱（选配演示）':'AGV 离开'); if(S.agvOn) setView('lul'); });
