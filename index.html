@@ -622,8 +622,8 @@ const INFO={
   paperIn:['垫纸回收仓','上料取走一片后，垫纸 picker 把露出的防静电垫纸移到这里，100 张。'],
   paperOut:['垫纸供给仓','下料每入仓一片，垫纸 picker 从这里取一张盖上，100 张。'],
   paperPick:['垫纸取放','小型 Y/Z 真空取放：上料侧回收、下料侧供给，各约 2 s，都与测试并行。'],
-  markStage:['打标缓冲台','真空平台：下料 picker 把测完的条带放到这里，激光打 NG 颗（0.08 s/颗，NG 3% 约 2.2 s），再送入下料仓；与下一条的测试并行。标 Top 面，若需标 Bottom 面改翻转台。'],
-  laser:['激光打标头','在缓冲台上给 NG 单元打标，位置来自本机 e-map。'],
+  markStage:['打标缓冲台','真空平台：下料 picker 把测完的条带放到这里（±0.3 mm），打标头同轴相机先读条带两角 Mark 定位（±50 µm），再按 e-map 坐标激光打 NG 颗（0.08 s/颗，NG 3% 约 2.2 s），然后送入下料仓；全程与下一条的测试并行。标 Top 面，若需标 Bottom 面改翻转台。'],
+  laser:['激光打标头 + 同轴相机','同轴相机读条带两角 Mark 建立坐标，再按本机 e-map 给 NG 单元打标；打完抽检标记位置。'],
   okMag:['OK 下料仓（电梯式）','单元良率 ≥ 97% 的条带，片间自动加垫纸；100 片/仓。'],
   ngMag:['NG 下料仓（电梯式）','单元良率 < 97% 的条带（阈值可配），Map 上传后人工复判；100 片/仓。'],
   pnpLoad:['上料取放机构','X/Z 真空吸头：8 个 Ø8 防静电波纹吸盘吸 Top 面阻焊区，剥离式起吸 + 离子风把 0.28 mm 薄片从垫纸上分离；途经对射激光测厚点做双片 / 带纸检测，再放到换片位的载具上（±0.3 mm）。'],
@@ -721,7 +721,7 @@ function paperBin(p,key){ const g=new THREE.Group(); g.position.set(p.x,0,p.z); 
 paperBin(paperPos.in,'paperIn'); paperBin(paperPos.out,'paperOut');
 // 打标缓冲台（真空平台）+ 激光打标头
 machine.add(box(18,2,10,M.ceramic,MARK.x,99,MARK.z,'markStage')); machine.add(box(4,6,4,M.dark,MARK.x-8,96,MARK.z,'markStage'));
-machine.add(box(6,8,6,M.dark,MARK.x,134,MARK.z,'laser')); machine.add(cyl(1.2,3,M.steel,MARK.x,128.5,MARK.z,'laser',12)); machine.add(box(3,40,3,M.alu,MARK.x,150,MARK.z-8,'laser')); machine.add(box(3,3,8,M.alu,MARK.x,138,MARK.z-4,'laser'));
+machine.add(box(6,8,6,M.dark,MARK.x,134,MARK.z,'laser')); machine.add(box(3,3,3,M.dark,MARK.x+4.5,135,MARK.z,'laser')); machine.add(cyl(.9,1.2,M.ring,MARK.x+4.5,133,MARK.z,'laser',12)); machine.add(cyl(1.2,3,M.steel,MARK.x,128.5,MARK.z,'laser',12)); machine.add(box(3,40,3,M.alu,MARK.x,150,MARK.z-8,'laser')); machine.add(box(3,3,8,M.alu,MARK.x,138,MARK.z-4,'laser'));
 const laserBeam=cyl(.25,27,std(0xff3030,{emissive:0xff2020,emissiveIntensity:1.5,transparent:true,opacity:.8}),MARK.x,113.5,MARK.z,undefined,8); laserBeam.visible=false; machine.add(laserBeam);
 const stackMat=std(0x2d6a46), paperMat=std(0xf4f1e8,{roughness:.9});
 const stripGeo=new THREE.BoxGeometry(14.2,.14,6.6), paperGeo=new THREE.BoxGeometry(14.6,.08,7);
@@ -1075,7 +1075,7 @@ function updateMeas(){
 }
 
 /* ---------------- 面板：物料流 / 工位 ---------------- */
-const FLOW=[['inMag','上料堆叠仓','电梯式，100 片/仓，A/B 轮换；片间垫纸自动分离',()=>S.input,()=>S.phase==='EXCH'&&S.pt<1.5&&!!S.incoming],['gauge','上料取放 · 双片检测','X/Z 真空吸头，剥离式起吸；对射激光测厚',()=>S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming?1:0,()=>S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming],['xy','换片位 → 针卡下方','长行程 X 轴，1 s',()=>S.phase==='IN'||S.phase==='OUT'?1:0,()=>S.phase==='IN'||S.phase==='OUT'],['align','读码 + 对位','针卡旁相机读 2D 码、四角 Mark，XYθ 补偿',()=>S.phase==='ALIGN'?1:0,()=>S.phase==='ALIGN'],['test','扎针测试','双面同时，1.2 s/次',()=>S.phase==='PROBE'?1:0,()=>S.phase==='PROBE'],['unload','下料取放 · 打标 · 分选','取片 → 缓冲台 NG 颗激光打标 → 良率 ≥ 97% 入 OK 仓',()=>S.outgoing?1:0,()=>!!S.outgoing],['out','OK / NG 下料仓 + 垫纸','每片之间加防静电垫纸；Map 上传 CIM V5.0',()=>`${S.ok} / ${S.ng}`,()=>S.paperDue]];
+const FLOW=[['inMag','上料堆叠仓','电梯式，100 片/仓，A/B 轮换；片间垫纸自动分离',()=>S.input,()=>S.phase==='EXCH'&&S.pt<1.5&&!!S.incoming],['gauge','上料取放 · 双片检测','X/Z 真空吸头，剥离式起吸；对射激光测厚',()=>S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming?1:0,()=>S.phase==='EXCH'&&S.pt>=1.5&&!!S.incoming],['xy','换片位 → 针卡下方','长行程 X 轴，1 s',()=>S.phase==='IN'||S.phase==='OUT'?1:0,()=>S.phase==='IN'||S.phase==='OUT'],['align','读码 + 对位','针卡旁相机读 2D 码、四角 Mark，XYθ 补偿',()=>S.phase==='ALIGN'?1:0,()=>S.phase==='ALIGN'],['test','扎针测试','双面同时，1.2 s/次',()=>S.phase==='PROBE'?1:0,()=>S.phase==='PROBE'],['unload','下料取放 · 打标 · 分选','取片 → 缓冲台读 Mark、NG 颗激光打标 → 良率 ≥ 97% 入 OK 仓',()=>S.outgoing?1:0,()=>!!S.outgoing],['out','OK / NG 下料仓 + 垫纸','每片之间加防静电垫纸；Map 上传 CIM V5.0',()=>`${S.ok} / ${S.ng}`,()=>S.paperDue]];
 function buildFlow(){ const f=$('flow'); f.innerHTML=''; FLOW.forEach((r,i)=>{ if(i){ const a=document.createElement('div'); a.className='arrow'; a.textContent='↓'; f.appendChild(a);} const d=document.createElement('div'); d.className='flowrow'; d.id='fl-'+r[0]; d.innerHTML=`<div><div class="n">${r[1]}</div><div class="d">${r[2]}</div></div><div class="c mono"></div>`; f.appendChild(d); }); }
 function updateFlow(){ FLOW.forEach(r=>{ const d=$('fl-'+r[0]); d.classList.toggle('on',!!S.segs&&r[4]()); d.querySelector('.c').textContent=r[3](); }); }
 const STATS=[{k:'load',n:'上料取放'},{k:'carrier',n:'载具'},{k:'probe',n:'针卡'},{k:'unload',n:'下料取放'}];
