@@ -333,8 +333,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
         <div class="sec">
           <h3>测量链路（针卡）</h3>
           <dl class="kv">
-            <dt>上针卡</dt><dd>PCB 针卡，细针接触 Top 0.12×0.15 mm 焊盘；Sense + Gate；EVA100 测试头直接对接针卡（Pogo tower），无长电缆</dd>
-            <dt>下针卡</dt><dd>Pogo 针卡，经载具窗口接触 Bottom 0.35 mm 焊盘；Force 电流</dd>
+            <dt>上针卡</dt><dd>环氧环悬臂式铼钨针卡：Ø0.20 / Ø0.30 mm 两组配平到 6 gf @ 75 µm，过冲 80 µm 时针力 4.1～6.9 gf，刮擦 12～15 µm；接触 Top 0.12×0.15 mm 焊盘；Sense + Gate；无上压板；EVA100 测试头直接对接针卡（Pogo tower）</dd>
+            <dt>下针卡</dt><dd>Pogo 针卡，经载具窗口接触 Bottom 0.35 mm 焊盘；Force 电流；针力 15～20 gf，由上针合力 + 筋条真空吸力平衡</dd>
             <dt>载具托块</dt><dd>下针卡两侧托条随下 Z 升起托住载具；有限元：2 mm 载具中央下沉 31 µm → 0.5 µm</dd>
             <dt>涨缩判据</dt><dd>片间随机涨缩到 ±600 ppm 不漏接触；批次均值相对针卡设计值漂移超 ±800 ppm 改半列针卡或重做针卡</dd>
             <dt>VS1S2 读数</dt><dd>针卡上 INA 前端 ×100 → 3:1 复用 → DGT 18 bit（12.5 µV）</dd>
@@ -402,7 +402,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
               <tr><td>用途</td><td>HDI / 车载 PCB 线路 O/S/Leak 检查</td><td class="me">嵌埋双 MOSFET 基板条带：VF、IGSS、VS1S2 器件参数</td></tr>
               <tr><td>接触方案</td><td>专用针座治具，Top/Bottom 16K 标配、32K 最大，一次压整板</td><td class="me">上下两张针卡，上卡约 384 针、下卡约 192 Pogo（512ch），Step &amp; Repeat 15 次走完一条</td></tr>
               <tr><td>治具成本</td><td>专用治具 ≈ 5× 通用治具；每个新品一套针座</td><td class="me">针卡为标准 PCB + 针，成本远低于全板针座；换新品只换针卡，EVA100 通道复用</td></tr>
-              <tr><td>最小节距</td><td>通用 300 µm / 专用 75 µm</td><td class="me">Top 焊盘 0.12×0.15 mm、节距 0.22 mm（细针卡）；Bottom 0.35 mm（Pogo）</td></tr>
+              <tr><td>最小节距</td><td>通用 300 µm / 专用 75 µm</td><td class="me">Top 焊盘 0.12×0.15 mm、节距 0.22 mm（悬臂式铼钨针，分两层）；Bottom 0.35 mm（Pogo）</td></tr>
               <tr><td>测试电子</td><td>内置 O/S 测试板</td><td class="me">Advantest EVA100 PPMU / DPS / DGT，128–512 ch；测试头直接对接针卡</td></tr>
               <tr><td>节拍</td><td>7.0 s / 4 面板（检查 0.5 s/pcs）</td><td class="me">512ch：15 × 1.2 s + 8 s = 26 s/条 ≈ 138 条/h（256ch ≈ 82，128ch ≈ 45）</td></tr>
               <tr><td>总合对位精度</td><td>±7.5 µm（M6V：±3.5 µm）</td><td class="me">Top 目标 ±25 µm（预算 ±17 µm，允差 ±35 µm）；Bottom 允差 ±100 µm</td></tr>
@@ -483,7 +483,7 @@ const S={
   hist:new Array(40).fill(0), lastMeas:[], explode:false, ghost:false, view:'overview', tab:'run',
   clean:null, swap:null, agv:0, agvOn:false,
   maintItems:[
-    {id:'top', name:'上针卡（细针）', part:'topCard', unit:'次扎针', life:300000, used:188400, act:'更换针卡', desc:'Top 0.12×0.15 mm 焊盘；卡座解锁后针卡从前门抽出，离线修针'},
+    {id:'top', name:'上针卡（悬臂式铼钨针）', part:'topCard', unit:'次扎针', life:1000000, used:612400, act:'更换针卡', desc:'铼钨针尖寿命按 100 万次计；卡座解锁后针卡从前门抽出，离线修针、单针可换'},
     {id:'bot', name:'下针卡（Pogo）', part:'botCard', unit:'次扎针', life:500000, used:301300, act:'更换针卡', desc:'Bottom 0.35 mm 焊盘；Pogo 针可单根更换'},
     {id:'cln', name:'针尖清洁', part:'topCard', unit:'次扎针', life:5000, used:3820, act:'执行清洁', desc:'载具上放清洁片，上下针卡各扎 3 次去除氧化物与碎屑'},
     {id:'vac', name:'真空滤芯', part:'vacuum', unit:'h', life:2000, used:1460, act:'更换滤芯', desc:'载具真空回路，压降超限导致薄板翘曲'},
@@ -623,9 +623,9 @@ const INFO={
   clamp:['张力夹','两端边夹对拉，抑制薄条带翘曲。'],
   camera:['对位相机','装在 C 型框架上、针卡旁边；载具先移到相机下取 Top 面 Mark，偏差送 XYθ 台补偿，再进针卡下方。'],
   cframe:['C 型刚性框架','上下针卡单元装在同一框架上，一次对位两面同轴；大板不转台，结构简单成本低。'],
-  topCard:['上针卡（Probe Card）','PCB 针卡，细针接触 Top 面 8 个焊盘，承担 Sense 与 Gate；卡座快换，针卡成本远低于全板针座。'],
+  topCard:['上针卡（悬臂式铼钨针 Probe Card）','环氧环悬臂式铼钨针卡：6 针列 Ø0.20 mm / 梁长 4.8 mm，2 针 Ø0.30 mm / 梁长 7.6 mm，配平到 6 gf @ 75 µm，设定过冲 80 µm，刮擦 12～15 µm；接触 Top 面 8 个焊盘，承担 Sense 与 Gate；无上压板；PCB 带加强环；卡座快换。'],
   topHolder:['上针卡座 / 测试头对接','针卡装在卡座里，EVA100 测试头从上方经 Pogo tower 直接对接针卡，不用长电缆。整单元带 Z 轴。'],
-  stripper:['上压板（Stripper）','随上针卡下降先压住条带，抬针时把条带从针尖剥离。'],
+  stripper:['（无上压板）','悬臂针卡不设上压板：下针反力（15～20 gf × 4）由上针合力和载具筋条真空吸力（≥ 36 gf/颗）平衡。'],
   botCard:['下针卡（Pogo Card）','Pogo 针卡，经载具窗口接触 Bottom 面 9 个焊盘 + 中心焊盘，承担 Force 电流。'],
   botHolder:['下针卡座 / 测试头对接','下针卡装在下卡座，512ch 时第二台 EVA100 的测试头从下方对接；整单元带 Z 轴。'],
   rail:['载具托块','下针卡两侧各一条，随下 Z 升起托住测试位下方的载具。有限元：2 mm 载具在压板预压 + 针力下中央下沉 31 µm，吃掉 1/3 的 Top 针过冲；加托块后 0.5 µm。'],
@@ -742,9 +742,12 @@ topUnit.add(box(36,20,36,M.dark,0,-24,0,'testhead'));                           
 topUnit.add(box(30,3,30,M.cardHolder,0,-35.5,0,'topHolder'));                    // 卡座 / Pogo tower
 const topCard=new THREE.Group(); topUnit.add(topCard); topCard.position.y=-38;
 topCard.add(box(32,1.2,32,M.pcb,0,0,0,'topCard')); topCard.add(box(33,.4,33,M.pcbEdge,0,-.7,0,'topCard'));
-topCard.add(box(5,3,9,M.navy,0,-2.4,0,'topCard')); topCard.add(box(3.6,.8,7.6,M.gold,0,-4.3,0,'topCard'));   // 针块与针尖
+// 环氧环 + 悬臂式铼钨针：环内沿 ±4（x）× ±7（z），针从两侧环边斜向伸到中心焊盘区，针尖在 y = -4.7
+topCard.add(box(1.2,1.6,15,M.navy,-4.6,-1.4,0,'topCard')); topCard.add(box(1.2,1.6,15,M.navy,4.6,-1.4,0,'topCard'));
+topCard.add(box(10.4,1.6,1.2,M.navy,0,-1.4,-7.6,'topCard')); topCard.add(box(10.4,1.6,1.2,M.navy,0,-1.4,7.6,'topCard'));
+for(let side=-1;side<=1;side+=2) for(let i=0;i<12;i++){ const z=-6.3+i*1.15; const len=side*i%2?3.2:4.2; const nd=box(len,.14,.14,M.gold,side*(4.0-len/2),-2.2-0.7*(len/4.2),z,'topCard'); nd.rotation.z=side*0.42; const tip=box(.35,.9,.14,M.gold,side*(4.0-len)-side*.1,-3.95,z,'topCard'); topCard.add(nd); topCard.add(tip); }
 topCard.add(box(6,1.6,6,M.navy,10,-1.6,-10,'ina'));
-const stripper=new THREE.Group(); topCard.add(stripper); stripper.add(box(10,.5,13,M.white,0,-4.6,0,'stripper'));
+const stripper=new THREE.Group(); topCard.add(stripper);   // 悬臂针卡无上压板，占位组保留给动画
 // 下针卡单元：下臂 → Z 滑座 → 测试头 → 卡座 → 针卡 → Pogo 块
 const botUnit=new THREE.Group(); botUnit.position.set(PROBE.x,40,PROBE.z); cframe.add(botUnit);
 botUnit.add(box(14,10,14,M.alu,0,5,-20,'botHolder')); botUnit.add(box(14,4,30,M.alu,0,12,-6,'botHolder'));
@@ -844,8 +847,7 @@ canvas.addEventListener('pointerup',ev=>{ if(!downAt||Math.hypot(ev.clientX-down
 /* ---------------- 三维标签 ---------------- */
 const LABELS=[
   {obj:topUnit, off:[0,-24,18], text:'上测试头（EVA100）直接对接针卡'},
-  {obj:topCard, off:[-16,0,0], text:'上针卡 · 细针 · Sense + Gate · INA 前端'},
-  {obj:stripper, off:[0,-5,-7], text:'上压板 Stripper'},
+  {obj:topCard, off:[-16,0,0], text:'上针卡 · 悬臂式铼钨针 6 gf · Sense + Gate · INA 前端'},
   {obj:carStrip.mesh, off:[8,0,0], text:'条带 142×66×0.28 mm · 真空载具 + 张力夹'},
   {obj:botCard, off:[-16,0,0], text:'下针卡 · Pogo · Force'},
   {obj:botCard, off:[14,8,0], text:'载具托块 · 下沉 31 → 0.5 µm'},
