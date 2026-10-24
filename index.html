@@ -339,6 +339,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
             <dt>涨缩判据</dt><dd>片间随机涨缩到 ±600 ppm 不漏接触；批次均值相对针卡设计值漂移超 ±800 ppm 改半列针卡或重做针卡</dd>
             <dt>VS1S2 读数</dt><dd>针卡上 INA 前端 ×100 → 3:1 复用 → DGT 18 bit（12.5 µV）</dd>
             <dt>防护</dt><dd>电流反向法消热电势；栅极电荷爬坡做接触检查；ESD 时序</dd>
+            <dt>Z 合针时序</dt><dd>上下 Z 同步反向运动，下 Z 加速度按质量比缩小使 m·a 相等，反力在 C 型框架内相消；仿真：接触瞬间框架振动 6 → 0 µm。10 mm 行程含 10 mm/s 软着陆 92 ms</dd>
+            <dt>IGSS 时间</dt><dd>15 ms：PPMU 2 µA 量程 5 V 阶跃 5.6 ms 充满，介质吸收 10 ms 后 < 0.1 nA；每 Lot 空载校零后最小可分辨约 20 nA</dd>
           </dl>
         </div>
         <div class="sec">
@@ -453,7 +455,7 @@ const MICRO_T=[0,.1,.25,.35,.45,1.05,1.2];
 // 周期分段（单载具）：换片 → 进 → 对位 → 扎针 → 出
 const SEGS=cfg=>[{k:'EXCH',n:'换片',d:T.EXCH,c:'--s1'},{k:'IN',n:'进',d:T.MOVE,c:'--s3'},{k:'ALIGN',n:'对位',d:T.ALIGN,c:'--s2'},{k:'PROBE',n:'扎针测试',d:cfg.N*TD,c:'--s4'},{k:'OUT',n:'出',d:T.MOVE,c:'--s3'}];
 const PHASE_CN={IDLE:'待机',EXCH:'换片位 · 下料取片 / 上料放片',IN:'载具进入针卡下方',ALIGN:'Top 面光学对位（XYθ 补偿）',PROBE:'Step & Repeat 扎针',OUT:'载具回换片位',WAIT:'待料 · 上料盒空',MAINT:'维护模式',ALARM:'报警停机',CLEAN:'针尖清洁',SWAP:'更换针卡'};
-const MICRO_CN={STEP:'载具 XY 步进',DOWN:'上下针卡合针',SETTLE:'接触稳定',CONTACT:'接触检查（栅极电荷爬坡）',TEST:'测试 VF / IGSS / VS1S2',UP:'针卡抬起'};
+const MICRO_CN={STEP:'载具 XY 步进',DOWN:'上下 Z 同步反向合针（反力相消）',SETTLE:'接触稳定',CONTACT:'接触检查（栅极电荷爬坡 2 µA × 200 µs）',TEST:'测试 VF / IGSS 15 ms / VS1S2 换向',UP:'上下 Z 同步分离'};
 
 function tdUnits(cfg,k){
   const u=[];
@@ -622,7 +624,7 @@ const INFO={
   carrier:['格栅窗口真空载具','吸附条带背面格栅区，边缘张力夹拉平 0.28 mm 薄板；窗口露出 Bottom 焊盘给下针卡。'],
   clamp:['张力夹','两端边夹对拉，抑制薄条带翘曲。'],
   camera:['对位相机','装在 C 型框架上、针卡旁边；载具先移到相机下取 Top 面 Mark，偏差送 XYθ 台补偿，再进针卡下方。'],
-  cframe:['C 型刚性框架','上下针卡单元装在同一框架上，一次对位两面同轴；大板不转台，结构简单成本低。'],
+  cframe:['C 型刚性框架','上下针卡单元装在同一框架上，一次对位两面同轴；上下 Z 同步反向运动，反力在框架内相消；大板不转台，结构简单成本低。'],
   topCard:['上针卡（悬臂式铼钨针 Probe Card）','环氧环悬臂式铼钨针卡：6 针列 Ø0.20 mm / 梁长 4.8 mm，2 针 Ø0.30 mm / 梁长 7.6 mm，配平到 6 gf @ 75 µm，设定过冲 80 µm，刮擦 12～15 µm；接触 Top 面 8 个焊盘，承担 Sense 与 Gate；无上压板；PCB 带加强环；卡座快换。'],
   topHolder:['上针卡座 / 测试头对接','针卡装在卡座里，EVA100 测试头从上方经 Pogo tower 直接对接针卡，不用长电缆。整单元带 Z 轴。'],
   stripper:['（无上压板）','悬臂针卡不设上压板：下针反力（15～20 gf × 4）由上针合力和载具筋条真空吸力（≥ 36 gf/颗）平衡。'],
